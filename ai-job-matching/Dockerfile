@@ -2,11 +2,11 @@ FROM maven:3.9-eclipse-temurin-17 AS build
 
 WORKDIR /build
 
-COPY ai-job-matching/pom.xml .
+COPY pom.xml .
 
 RUN mvn -B -q -e -DskipTests dependency:go-offline
 
-COPY ai-job-matching/src ./src
+COPY src ./src
 
 RUN mvn -B -DskipTests package
 
