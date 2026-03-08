@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AI Resume Job Matcher</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Inter, sans-serif;
+}
+
+body{
+background:#f5f7fb;
+padding:20px;
+color:#1f2937;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+}
+
+.title{
+font-size:28px;
+font-weight:600;
+margin-bottom:20px;
+}
+
+.card{
+background:white;
+padding:25px;
+border-radius:16px;
+box-shadow:0 6px 20px rgba(0,0,0,0.08);
+margin-bottom:20px;
+}
+
+.input{
+width:100%;
+padding:12px;
+border-radius:10px;
+border:1px solid #e5e7eb;
+margin-bottom:15px;
+font-size:15px;
+}
+
+.button{
+background:#6366f1;
+color:white;
+border:none;
+padding:12px 18px;
+border-radius:12px;
+cursor:pointer;
+font-size:15px;
+}
+
+.button:hover{
+background:#4f46e5;
+}
+
+.jobs{
+margin-top:20px;
+}
+
+.job{
+background:white;
+padding:16px;
+border-radius:12px;
+margin-bottom:12px;
+box-shadow:0 4px 12px rgba(0,0,0,0.06);
+}
+
+.job-title{
+font-size:18px;
+font-weight:600;
+}
+
+.company{
+color:#6b7280;
+margin:4px 0;
+}
+
+.score{
+color:#6366f1;
+font-size:14px;
+}
+
+.apply{
+display:inline-block;
+margin-top:8px;
+padding:8px 14px;
+background:#10b981;
+color:white;
+border-radius:8px;
+text-decoration:none;
+font-size:14px;
+}
+
+.spinner {
+    width:40px;
+    height:40px;
+    border:4px solid #e5e7eb;
+    border-top:4px solid #6366f1;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    margin:auto;
+}
+
+@keyframes spin {
+    0% { transform:rotate(0deg); }
+    100% { transform:rotate(360deg); }
+}
+
+</style>
+
+</head>
+
+<script>
+const API_BASE = "http://localhost:8080";
+
+async function uploadResume() {
+
+  document.getElementById("loading").style.display = "block";
+  const email = document.getElementById("email").value;
+  const fileInput = document.getElementById("resume");
+  const file = fileInput.files[0];
+
+  if (!email || !file) {
+    alert("Please enter email and upload resume");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("email", email);
+  formData.append("file", file);
+
+  const response = await fetch(API_BASE + "/resume/upload", {
+    method: "POST",
+    body: formData
+  });
+
+  const resume = await response.json();
+
+  matchJobs(resume.id);
+}
+
+async function matchJobs(resumeId) {
+
+  const response = await fetch(API_BASE + "/match/" + resumeId);
+  const jobs = await response.json();
+
+  const results = document.getElementById("results");
+  results.innerHTML = "";
+
+  jobs.forEach(job => {
+
+    results.innerHTML += `
+      <div class="job">
+        <div class="job-title">${job.title}</div>
+        <div class="company">${job.company} • ${job.location}</div>
+        <div class="score">Match Score: ${job.matchScore.toFixed(2)}</div>
+        <a class="apply" href="${job.applyLink}" target="_blank">Apply</a>
+      </div>
+    `;
+  });
+  document.getElementById("loading").style.display = "none";
+
+}
+</script>
+
+<body>
+
+<div class="container">
+
+<div class="title">
+AI Resume Job Matcher
+</div>
+
+<div class="card">
+
+<input id="email" class="input" placeholder="Enter your email">
+
+<input id="resume" class="input" type="file">
+
+<button class="button" onclick="uploadResume()">
+Find Matching Jobs
+</button>
+
+<div id="loading" style="display:none;margin-top:20px;text-align:center;">
+    <div class="spinner"></div>
+    <p>Analyzing resume and matching jobs...</p>
+</div>
+
+</div>
+
+<div id="results" class="jobs"></div>
+
+</div>
+
+</body>
+</html>

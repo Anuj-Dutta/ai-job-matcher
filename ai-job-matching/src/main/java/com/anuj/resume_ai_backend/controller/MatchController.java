@@ -1,0 +1,53 @@
+package com.anuj.resume_ai_backend.controller;
+
+import com.anuj.resume_ai_backend.entity.Job;
+import com.anuj.resume_ai_backend.entity.Resume;
+import com.anuj.resume_ai_backend.repository.ResumeRepository;
+import com.anuj.resume_ai_backend.service.MatchingService;
+import org.springframework.web.bind.annotation.*;
+import com.anuj.resume_ai_backend.service.EmailService;
+
+import java.util.List;
+
+@CrossOrigin(origins = "*")
+@RestController
+@RequestMapping("/match")
+public class MatchController {
+
+    private final ResumeRepository resumeRepository;
+    private final MatchingService matchingService;
+    private final EmailService emailService;
+
+    public MatchController(ResumeRepository resumeRepository,
+                       MatchingService matchingService,
+                       EmailService emailService) {
+    this.resumeRepository = resumeRepository;
+    this.matchingService = matchingService;
+    this.emailService = emailService;
+}
+
+    @GetMapping("/{resumeId}")
+    public List<Job> matchJobs(@PathVariable Long resumeId) {
+
+        Resume resume = resumeRepository.findById(resumeId).orElseThrow();
+
+        var jobs = matchingService.matchJobs(resume);
+
+        StringBuilder body = new StringBuilder("Top matched jobs:\n\n");
+
+        for (var job : jobs) {
+            body.append(job.getTitle())
+                .append(" - ")
+                .append(job.getCompany())
+                .append(" (score: ")
+                .append(job.getMatchScore())
+                .append(")\n")
+                .append(job.getApplyLink())
+                .append("\n\n");
+        }
+
+        emailService.sendEmail(resume.getEmail(), "Your Job Matches", body.toString());
+
+        return jobs;
+    }
+}
