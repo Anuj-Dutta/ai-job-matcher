@@ -33,7 +33,7 @@ const formData=new FormData()
 formData.append("file",file)
 formData.append("email",email)
 
-const res=await fetch("http://localhost:8080/resume/upload",{
+const res=await fetch("https://ai-job-matching-backend.onrender.com/resume/upload",{
 method:"POST",
 body:formData
 })
@@ -49,7 +49,7 @@ async function matchJobs(){
 
 setMatching(true)
 
-const res=await fetch(`http://localhost:8080/match/${resumeId}`)
+const res=await fetch(`https://ai-job-matching-backend.onrender.com/match/${resumeId}`)
 
 const data=await res.json()
 
