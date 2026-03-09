@@ -18,25 +18,53 @@ public class EmbeddingService {
 
     public String generateEmbedding(String text) {
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(HF_TOKEN);
+        try {
 
-        HttpEntity<String> request =
-                new HttpEntity<>("{\"inputs\":\"" + text + "\"}", headers);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(HF_TOKEN);
 
-        ResponseEntity<List> response =
-                restTemplate.exchange(HF_API, HttpMethod.POST, request, List.class);
+            Map<String, String> body = new HashMap<>();
+            body.put("inputs", text);
 
-        List<Double> embedding = (List<Double>) response.getBody().get(0);
+            HttpEntity<Map<String, String>> request =
+                    new HttpEntity<>(body, headers);
 
-        StringBuilder vector = new StringBuilder();
+            ResponseEntity<List> response =
+                    restTemplate.exchange(HF_API, HttpMethod.POST, request, List.class);
 
-        for (int i = 0; i < embedding.size(); i++) {
-            vector.append(embedding.get(i));
-            if (i < embedding.size() - 1) vector.append(",");
+            List<?> outer = response.getBody();
+
+            if (outer == null || outer.isEmpty()) {
+                System.out.println("Embedding response empty");
+                return null;
+            }
+
+            List<Double> embedding;
+
+            if (outer.get(0) instanceof List) {
+                embedding = (List<Double>) outer.get(0);
+            } else {
+                System.out.println("Unexpected embedding format");
+                return null;
+            }
+
+            StringBuilder vector = new StringBuilder();
+
+            for (int i = 0; i < embedding.size(); i++) {
+                vector.append(embedding.get(i));
+                if (i < embedding.size() - 1) {
+                    vector.append(",");
+                }
+            }
+
+            return vector.toString();
+
+        } catch (Exception e) {
+
+            System.out.println("Embedding API error: " + e.getMessage());
+            return null;
+
         }
-
-        return vector.toString();
     }
 }
