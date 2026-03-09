@@ -17,7 +17,7 @@ public class EmbeddingService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String token = System.getenv("HF_TOKEN");
+        String token = System.getenv("ai-job-matcher");
         headers.setBearerAuth(token);
 
         HttpEntity<String> entity = new HttpEntity<>(text, headers);
