@@ -28,7 +28,6 @@ public class Job {
     @Column(unique = true)
 private String externalId;
 
-    @JsonIgnore
     @Lob
     @Column(columnDefinition = "TEXT")
     private String embedding;
