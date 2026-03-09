@@ -30,7 +30,7 @@ private String externalId;
 
     @JsonIgnore
     @Lob
-    @Column(columnDefinition = "LONGTEXT")
+    @Column(columnDefinition = "TEXT")
     private String embedding;
 
 

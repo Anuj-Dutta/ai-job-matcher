@@ -3,8 +3,7 @@ package com.anuj.resume_ai_backend.ai;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
-import java.util.Map;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class EmbeddingService {
@@ -13,21 +12,20 @@ public class EmbeddingService {
 
     public String generateEmbedding(String text) {
 
-        String url = "http://localhost:11434/api/embeddings";
-
-        Map<String, Object> request = Map.of(
-                "model", "nomic-embed-text",
-                "prompt", text
-        );
+        String url = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
+        String token = System.getenv("HF_TOKEN");
+        headers.setBearerAuth(token);
 
-        Map response = restTemplate.postForObject(url, entity, Map.class);
+        HttpEntity<String> entity = new HttpEntity<>(text, headers);
 
-        List<Double> embedding = (List<Double>) response.get("embedding");
+        List<List<Double>> response =
+                restTemplate.postForObject(url, entity, List.class);
+
+        List<Double> embedding = response.get(0);
 
         StringBuilder vector = new StringBuilder();
 

@@ -73,7 +73,7 @@ The frontend includes:
                            |
                            v
                 +----------------------+
-                | Job Database (MySQL) |
+                | Job Database (PostgreSQL) |
                 +----------+-----------+
                            |
                            v
@@ -105,7 +105,7 @@ The frontend includes:
 - Cosine Similarity
 
 ## Database
-- MySQL
+- PostgreSQL
 
 ## Frontend
 - React
