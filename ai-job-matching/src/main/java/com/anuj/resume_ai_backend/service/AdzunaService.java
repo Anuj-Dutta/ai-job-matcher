@@ -103,13 +103,10 @@ public class AdzunaService {
                 job.setApplyLink((String) jobData.get("redirect_url"));
 
                 try {
-                try {
                 job.setEmbedding(embeddingService.generateEmbedding(job.getDescription()));
             } catch (Exception e) {
                 System.out.println("Embedding failed, saving job without embedding.");
             }
-
-            jobRepository.save(job);
                 jobRepository.save(job);
                 imported++;
             }
