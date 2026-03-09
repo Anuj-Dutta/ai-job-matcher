@@ -22,6 +22,9 @@ public class AdzunaService {
 
     public String importJobs() {
 
+        int MAX_IMPORT = 150;
+        int imported = 0;
+
         if (jobRepository.count() > 3000) {
             System.out.println("Job database large enough. Skipping import.");
             return "Import skipped";
@@ -38,13 +41,16 @@ public class AdzunaService {
                 "programmer"
         };
 
-        int imported = 0;
-
         RestTemplate restTemplate = new RestTemplate();
 
         for (String query : queries) {
 
             for (int page = 1; page <= 3; page++) {
+
+                if (imported >= MAX_IMPORT) {
+                    System.out.println("Reached import limit for this cycle.");
+                    return "Imported " + imported + " jobs";
+                }
 
                 String url =
                         "https://api.adzuna.com/v1/api/jobs/in/search/" + page +
@@ -79,6 +85,11 @@ public class AdzunaService {
                 }
 
                 for (Map<String, Object> jobData : results) {
+
+                    if (imported >= MAX_IMPORT) {
+                        System.out.println("Reached import limit for this cycle.");
+                        return "Imported " + imported + " jobs";
+                    }
 
                     String externalId = String.valueOf(jobData.get("adref"));
 
