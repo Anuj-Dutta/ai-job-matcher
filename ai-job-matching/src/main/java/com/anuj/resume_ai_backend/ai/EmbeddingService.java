@@ -20,6 +20,19 @@ public class EmbeddingService {
 
         try {
 
+            if (text == null || text.isEmpty()) {
+                System.out.println("Empty text received for embedding.");
+                return null;
+            }
+
+            // Trim huge descriptions (HF sometimes rejects long input)
+            if (text.length() > 1000) {
+                text = text.substring(0, 1000);
+            }
+
+            System.out.println("Generating embedding for text length: " + text.length());
+            System.out.println("HF TOKEN PRESENT: " + (HF_TOKEN != null));
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(HF_TOKEN);
@@ -33,10 +46,12 @@ public class EmbeddingService {
             ResponseEntity<List> response =
                     restTemplate.exchange(HF_API, HttpMethod.POST, request, List.class);
 
+            System.out.println("HF RESPONSE BODY: " + response.getBody());
+
             List<?> outer = response.getBody();
 
             if (outer == null || outer.isEmpty()) {
-                System.out.println("Embedding response empty");
+                System.out.println("Embedding response empty.");
                 return null;
             }
 
@@ -45,7 +60,7 @@ public class EmbeddingService {
             if (outer.get(0) instanceof List) {
                 embedding = (List<Double>) outer.get(0);
             } else {
-                System.out.println("Unexpected embedding format");
+                System.out.println("Unexpected embedding format.");
                 return null;
             }
 
@@ -62,9 +77,9 @@ public class EmbeddingService {
 
         } catch (Exception e) {
 
-            System.out.println("Embedding API error: " + e.getMessage());
+            System.out.println("Embedding API error:");
+            e.printStackTrace();
             return null;
-
         }
     }
 }
