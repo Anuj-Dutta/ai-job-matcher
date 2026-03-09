@@ -13,7 +13,7 @@ public class JobImportScheduler {
         this.adzunaService = adzunaService;
     }
 
-    @Scheduled(fixedRate = 3600000) // every 1 hour
+    @Scheduled(fixedRate = 60000) // every 1 minutes
     public void importJobsAutomatically() {
 
         System.out.println("Auto-importing jobs from Adzuna...");
