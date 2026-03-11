@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const API_BASE_URL = 'https://ai-job-matching-backend.onrender.com';
+const API_BASE_URL = 'https://ai-job-matcher-5ea8.onrender.com';
 
 function App() {
     const [file, setFile] = useState(null);
@@ -133,7 +133,7 @@ function App() {
                     </div>
 
                     <div className="company">
-                        {job.company} • {job.location}
+                        {job.company} ï¿½ {job.location}
                     </div>
 
                     <div className="score">Match Score: {(job.matchScore * 100).toFixed(1)}%</div>
@@ -156,7 +156,7 @@ function App() {
                 <p>AI Resume Job Matcher</p>
             </div>
 
-            <div className="watermark">Anuj Dutta • AI Job Matcher</div>
+            <div className="watermark">Anuj Dutta ï¿½ AI Job Matcher</div>
         </div>
     );
 }
