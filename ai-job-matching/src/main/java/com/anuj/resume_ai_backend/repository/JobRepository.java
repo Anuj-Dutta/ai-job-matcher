@@ -12,6 +12,4 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     boolean existsByExternalId(String externalId);
 
     List<Job> findTop200BySkillsContainingIgnoreCase(String skill);
-
-
 }

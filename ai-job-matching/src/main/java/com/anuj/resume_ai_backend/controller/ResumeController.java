@@ -2,7 +2,11 @@ package com.anuj.resume_ai_backend.controller;
 
 import com.anuj.resume_ai_backend.entity.Resume;
 import com.anuj.resume_ai_backend.service.ResumeService;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @CrossOrigin(origins = "*")
@@ -21,7 +25,6 @@ public class ResumeController {
             @RequestParam String email,
             @RequestParam MultipartFile file
     ) throws Exception {
-
         return resumeService.saveResume(email, file);
     }
 }

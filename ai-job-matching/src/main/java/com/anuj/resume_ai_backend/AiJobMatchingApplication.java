@@ -8,8 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class AiJobMatchingApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(AiJobMatchingApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(AiJobMatchingApplication.class, args);
+    }
 }

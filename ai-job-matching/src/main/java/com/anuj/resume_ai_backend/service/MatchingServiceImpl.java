@@ -5,6 +5,7 @@ import com.anuj.resume_ai_backend.ai.SimilarityService;
 import com.anuj.resume_ai_backend.entity.Job;
 import com.anuj.resume_ai_backend.entity.Resume;
 import com.anuj.resume_ai_backend.repository.JobRepository;
+import com.anuj.resume_ai_backend.repository.ResumeRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -15,79 +16,118 @@ import java.util.Set;
 @Service
 public class MatchingServiceImpl implements MatchingService {
 
+    private static final double MATCH_THRESHOLD = 0.35;
+
     private final JobRepository jobRepository;
+    private final ResumeRepository resumeRepository;
     private final SimilarityService similarityService;
     private final EmbeddingService embeddingService;
 
-   public MatchingServiceImpl(JobRepository jobRepository,SimilarityService similarityService,EmbeddingService embeddingService) {
-    this.jobRepository = jobRepository;
-    this.similarityService = similarityService;
-    this.embeddingService = embeddingService;
+    public MatchingServiceImpl(
+            JobRepository jobRepository,
+            ResumeRepository resumeRepository,
+            SimilarityService similarityService,
+            EmbeddingService embeddingService
+    ) {
+        this.jobRepository = jobRepository;
+        this.resumeRepository = resumeRepository;
+        this.similarityService = similarityService;
+        this.embeddingService = embeddingService;
     }
 
     @Override
     public List<Job> matchJobs(Resume resume) {
+        String skills = resume.getSkillsJson();
+        if (skills == null || skills.isBlank()) {
+            return new ArrayList<>();
+        }
 
-    String skills = resume.getSkillsJson();
+        ensureResumeEmbedding(resume);
+        if (resume.getEmbedding() == null || resume.getEmbedding().isBlank()) {
+            return new ArrayList<>();
+        }
 
-    if (skills == null || skills.isEmpty()) {
-        return new ArrayList<>();
+        List<Job> jobs = jobRepository.findAll();
+        List<Job> matched = new ArrayList<>();
+        Set<String> missingSkills = new HashSet<>();
+
+        for (Job job : jobs) {
+            ensureJobEmbedding(job);
+            if (job.getEmbedding() == null || job.getEmbedding().isBlank()) {
+                continue;
+            }
+
+            double score = similarityService.cosineSimilarity(resume.getEmbedding(), job.getEmbedding());
+            System.out.println("Similarity score: " + score);
+
+            if (score > MATCH_THRESHOLD) {
+                job.setMatchScore(score);
+                matched.add(job);
+                collectMissingSkills(resume, job, missingSkills);
+            }
+        }
+
+        matched.sort((a, b) -> Double.compare(b.getMatchScore(), a.getMatchScore()));
+        System.out.println("Missing skills suggestion: " + missingSkills);
+        return matched.stream().limit(10).toList();
     }
 
-String firstSkill = skills
-        .replace("[", "")
-        .replace("]", "")
-        .split(",")[0]
-        .trim();
+    private void ensureResumeEmbedding(Resume resume) {
+        if (resume.getEmbedding() != null && !resume.getEmbedding().isBlank()) {
+            return;
+        }
 
-List<Job> jobs = jobRepository.findAll();
-    List<Job> matched = new ArrayList<>();
-    Set<String> missingSkills = new HashSet<>();
-
-    if (resume.getEmbedding() == null) {
-        return matched;
+        String embedding = embeddingService.generateEmbedding(resume.getResumeText());
+        if (embedding != null && !embedding.isBlank()) {
+            resume.setEmbedding(embedding);
+            resumeRepository.save(resume);
+        }
     }
 
-    for (Job job : jobs) {
+    private void ensureJobEmbedding(Job job) {
+        if (job.getEmbedding() != null && !job.getEmbedding().isBlank()) {
+            return;
+        }
 
-    if (job.getEmbedding() == null) {
-        String embedding = embeddingService.generateEmbedding(job.getDescription());
-        job.setEmbedding(embedding);
-        jobRepository.save(job);
+        String embedding = embeddingService.generateEmbedding(buildJobText(job));
+        if (embedding != null && !embedding.isBlank()) {
+            job.setEmbedding(embedding);
+            jobRepository.save(job);
+        }
     }
 
-    double score = similarityService.cosineSimilarity(
-            resume.getEmbedding(),
-            job.getEmbedding()
-    );
-System.out.println("Similarity score: " + score);
-
-        if (score > 0.35) {
-
-    job.setMatchScore(score);
-    matched.add(job);
-
-    if (job.getSkills() != null && resume.getSkillsJson() != null) {
+    private void collectMissingSkills(Resume resume, Job job, Set<String> missingSkills) {
+        if (job.getSkills() == null || resume.getSkillsJson() == null) {
+            return;
+        }
 
         String resumeSkills = resume.getSkillsJson().toLowerCase();
         String[] jobSkills = job.getSkills().toLowerCase().split(",");
 
         for (String skill : jobSkills) {
-
             String trimmed = skill.trim();
-
-            if (!resumeSkills.contains(trimmed)) {
+            if (!trimmed.isEmpty() && !resumeSkills.contains(trimmed)) {
                 missingSkills.add(trimmed);
             }
-
         }
     }
-}
+
+    private String buildJobText(Job job) {
+        StringBuilder builder = new StringBuilder();
+        appendIfPresent(builder, job.getTitle());
+        appendIfPresent(builder, job.getDescription());
+        appendIfPresent(builder, job.getSkills());
+        return builder.toString().trim();
     }
 
-    matched.sort((a, b) -> Double.compare(b.getMatchScore(), a.getMatchScore()));
+    private void appendIfPresent(StringBuilder builder, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
 
-    System.out.println("Missing skills suggestion: " + missingSkills);
-    return matched.stream().limit(10).toList();
+        if (!builder.isEmpty()) {
+            builder.append(' ');
+        }
+        builder.append(value.trim());
     }
 }

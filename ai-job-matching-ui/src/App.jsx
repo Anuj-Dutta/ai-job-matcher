@@ -1,196 +1,164 @@
-import { useState } from "react";
+import { useState } from 'react';
 
-function App(){
+const API_BASE_URL = 'https://ai-job-matching-backend.onrender.com';
 
-const [file,setFile]=useState(null)
-const [email,setEmail]=useState("")
-const [resumeId,setResumeId]=useState(null)
-const [jobs,setJobs]=useState([])
-const [dark,setDark]=useState(false)
-const [uploading,setUploading]=useState(false)
-const [matching,setMatching]=useState(false)
+function App() {
+    const [file, setFile] = useState(null);
+    const [email, setEmail] = useState('');
+    const [resumeId, setResumeId] = useState(null);
+    const [jobs, setJobs] = useState([]);
+    const [dark, setDark] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [matching, setMatching] = useState(false);
 
-function toggleTheme(){
-setDark(!dark)
+    function toggleTheme() {
+        setDark((current) => {
+            const next = !current;
 
-if(!dark){
-document.body.classList.add("dark")
-}else{
-document.body.classList.remove("dark")
-}
-}
+            if (next) {
+                document.body.classList.add('dark');
+            } else {
+                document.body.classList.remove('dark');
+            }
 
-async function uploadResume(){
+            return next;
+        });
+    }
 
-if(!file || !email){
-alert("Please select a resume and enter email")
-return
-}
+    async function uploadResume() {
+        if (!file || !email) {
+            alert('Please select a resume and enter an email address.');
+            return;
+        }
 
-setUploading(true)
+        setUploading(true);
 
-const formData=new FormData()
-formData.append("file",file)
-formData.append("email",email)
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('email', email);
 
-const res=await fetch("https://ai-job-matching-backend.onrender.com/resume/upload",{
-method:"POST",
-body:formData
-})
+            const response = await fetch(`${API_BASE_URL}/resume/upload`, {
+                method: 'POST',
+                body: formData,
+            });
 
-const data=await res.json()
+            const data = await response.json();
+            setResumeId(data.id);
+        } finally {
+            setUploading(false);
+        }
+    }
 
-setResumeId(data.id)
+    async function matchJobs() {
+        if (!resumeId) {
+            return;
+        }
 
-setUploading(false)
+        setMatching(true);
 
-}
-async function matchJobs(){
+        try {
+            const response = await fetch(`${API_BASE_URL}/match/${resumeId}`);
+            const data = await response.json();
+            const sortedJobs = data.sort((a, b) => b.matchScore - a.matchScore);
 
-setMatching(true)
+            setJobs(sortedJobs);
+        } finally {
+            setMatching(false);
+        }
+    }
 
-const res=await fetch(`https://ai-job-matching-backend.onrender.com/match/${resumeId}`)
+    return (
+        <div className="container">
+            <h1 className="title">Job Matching AI</h1>
 
-const data=await res.json()
+            <div className="themeRow">
+                <span>Light</span>
 
-const sorted=data.sort((a,b)=>b.matchScore-a.matchScore)
+                <label className="switch">
+                    <input type="checkbox" checked={dark} onChange={toggleTheme} />
+                    <span className="slider" />
+                </label>
 
-setJobs(sorted)
+                <span>Dark</span>
+            </div>
 
-setMatching(false)
+            <div className="card">
+                <input
+                    className="input"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                />
 
-}
-return(
+                <input type="file" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
 
-<div className="container">
+                <div className="buttonStack">
+                    <button className="button" onClick={uploadResume}>
+                        Upload Resume
+                    </button>
 
-<h1 className="title">Job Matching AI</h1>
+                    {resumeId && (
+                        <button className="button" onClick={matchJobs}>
+                            Find Jobs
+                        </button>
+                    )}
+                </div>
 
-<div className="themeRow">
+                {uploading && (
+                    <div className="loaderContainer">
+                        <div className="spinner" />
+                        <p>Uploading resume...</p>
+                    </div>
+                )}
 
-<span>🌞</span>
+                {matching && (
+                    <div className="loaderContainer">
+                        <div className="spinner" />
+                        <p>AI is matching jobs...</p>
+                    </div>
+                )}
+            </div>
 
-<label className="switch">
-<input
-type="checkbox"
-checked={dark}
-onChange={toggleTheme}
-/>
-<span className="slider"></span>
-</label>
+            {jobs.map((job, index) => (
+                <div key={`${job.applyLink}-${index}`} className={`jobCard ${index === 0 ? 'topMatch' : ''}`}>
+                    <div className="jobTitle">
+                        {job.title}
+                        {index === 0 && (
+                            <span className="topMatchLabel">
+                                Top Match
+                            </span>
+                        )}
+                    </div>
 
-<span>🌙</span>
+                    <div className="company">
+                        {job.company} � {job.location}
+                    </div>
 
-</div>
+                    <div className="score">Match Score: {(job.matchScore * 100).toFixed(1)}%</div>
 
-<div className="card">
+                    <div className="scoreBarContainer">
+                        <div className="scoreBar" style={{ width: `${job.matchScore * 100}%` }} />
+                    </div>
 
-<input
-className="input"
-type="email"
-placeholder="Enter your email"
-value={email}
-onChange={(e)=>setEmail(e.target.value)}
-/>
+                    <a className="applyBtn" href={job.applyLink} target="_blank" rel="noreferrer">
+                        Apply -&gt;
+                    </a>
+                </div>
+            ))}
 
-<input
-type="file"
-onChange={(e)=>setFile(e.target.files[0])}
-/>
+            <div className="footer">
+                <p>
+                    <strong>Anuj Dutta</strong>
+                </p>
+                <p>Email: dattaanuj1804@gmail.com</p>
+                <p>AI Resume Job Matcher</p>
+            </div>
 
-<div className="buttonStack">
-
-<button className="button" onClick={uploadResume}>
-Upload Resume
-</button>
-
-{resumeId && (
-<button className="button" onClick={matchJobs}>
-Find Jobs
-</button>
-)}
-
-</div>
-
-{uploading && (
-
-<div className="loaderContainer">
-
-<div className="spinner"></div>
-<p>Uploading resume...</p>
-
-</div>
-
-)}
-
-{matching && (
-
-<div className="loaderContainer">
-
-<div className="spinner"></div>
-<p>AI is matching jobs...</p>
-
-</div>
-
-)}
-
-</div>
-
-{jobs.map((job,i)=>(
-
-<div
-key={i}
-className={`jobCard ${i===0?"topMatch":""}`}
->
-
-<div className="jobTitle">
-{job.title}
-{i===0 && <span style={{color:"#f59e0b",marginLeft:"8px"}}>Top Match</span>}
-</div>
-
-<div className="company">
-{job.company} • {job.location}
-</div>
-
-<div className="score">
-Match Score: {(job.matchScore*100).toFixed(1)}%
-</div>
-
-<div className="scoreBarContainer">
-<div
-className="scoreBar"
-style={{width:`${job.matchScore*100}%`}}
-></div>
-</div>
-
-<a
-className="applyBtn"
-href={job.applyLink}
-target="_blank"
->
-Apply →
-</a>
-
-</div>
-
-))}
-
-<div className="footer">
-
-<p><strong>Anuj Dutta</strong></p>
-<p>Email: dattaanuj1804@gmail.com</p>
-<p>AI Resume Job Matcher</p>
-
-</div>
-
-<div className="watermark">
-Anuj Dutta • AI Job Matcher
-</div>
-
-</div>
-
-)
-
+            <div className="watermark">Anuj Dutta � AI Job Matcher</div>
+        </div>
+    );
 }
 
-export default App
+export default App;

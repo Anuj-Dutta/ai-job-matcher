@@ -8,5 +8,4 @@ import java.util.List;
 public interface MatchingService {
 
     List<Job> matchJobs(Resume resume);
-
 }

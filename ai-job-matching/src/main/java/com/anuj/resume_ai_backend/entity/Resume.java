@@ -1,6 +1,11 @@
 package com.anuj.resume_ai_backend.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 
 @Entity
 public class Resume {
@@ -19,6 +24,10 @@ public class Resume {
     @Column(columnDefinition = "TEXT")
     private String skillsJson;
 
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String embedding;
+
     public Long getId() {
         return id;
     }
@@ -27,31 +36,28 @@ public class Resume {
         return email;
     }
 
-    public String getResumeText() {
-        return resumeText;
-    }
-
-    public String getSkillsJson() {
-        return skillsJson;
-    }
-
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getResumeText() {
+        return resumeText;
     }
 
     public void setResumeText(String resumeText) {
         this.resumeText = resumeText;
     }
 
+    public String getSkillsJson() {
+        return skillsJson;
+    }
+
     public void setSkillsJson(String skillsJson) {
         this.skillsJson = skillsJson;
     }
-    @Lob
-    @Column(columnDefinition = "TEXT")
-    private String embedding;
 
     public String getEmbedding() {
-    return embedding;
+        return embedding;
     }
 
     public void setEmbedding(String embedding) {
