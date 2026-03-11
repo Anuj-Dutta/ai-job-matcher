@@ -26,7 +26,6 @@ public class Job {
     private String skills;
     private String applyLink;
 
-    @Column(unique = true)
     private String externalId;
 
     @Lob

@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: ai-job-matching-backend
+    runtime: docker
+    rootDir: ai-job-matching
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /job/all
+    envVars:
+      - key: SERVER_PORT
+        value: "8080"
+      - key: JPA_DDL_AUTO
+        value: update
+      - key: JPA_SHOW_SQL
+        value: false
+      - key: JOBS_IMPORT_SCHEDULER_ENABLED
+        value: false
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: ADZUNA_APP_ID
+        sync: false
+      - key: ADZUNA_APP_KEY
+        sync: false
+      - key: HF_TOKEN
+        sync: false
+
+  - type: static_site
+    name: ai-job-matching-ui
+    rootDir: ai-job-matching-ui
+    buildCommand: npm install && npm run build
+    publishPath: dist
+    pullRequestPreviewsEnabled: true
