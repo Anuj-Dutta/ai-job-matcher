@@ -1,5 +1,6 @@
 package com.anuj.resume_ai_backend.ai;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -25,6 +26,7 @@ public class EmbeddingService {
     private final String hfApi;
     private final String hfToken;
 
+    @Autowired
     public EmbeddingService(
             @Value("${ai.embedding.hf.api:https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2}") String hfApi,
             @Value("${HF_TOKEN:}") String hfToken
@@ -211,3 +213,5 @@ public class EmbeddingService {
         return vector.toString();
     }
 }
+
+
