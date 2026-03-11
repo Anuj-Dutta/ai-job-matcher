@@ -9,4 +9,6 @@ public interface JobService {
     Job saveJob(Job job);
 
     List<Job> getAllJobs();
+
+    int backfillMissingEmbeddings();
 }

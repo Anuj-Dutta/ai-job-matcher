@@ -29,6 +29,28 @@ public class JobServiceImpl implements JobService {
         return jobRepository.findAll();
     }
 
+    @Override
+    public int backfillMissingEmbeddings() {
+        int updated = 0;
+
+        for (Job job : jobRepository.findAll()) {
+            if (job.getEmbedding() != null && !job.getEmbedding().isBlank()) {
+                continue;
+            }
+
+            String embedding = embeddingService.generateEmbedding(buildJobText(job));
+            if (embedding == null || embedding.isBlank()) {
+                continue;
+            }
+
+            job.setEmbedding(embedding);
+            jobRepository.save(job);
+            updated++;
+        }
+
+        return updated;
+    }
+
     private String buildJobText(Job job) {
         StringBuilder builder = new StringBuilder();
         appendIfPresent(builder, job.getTitle());

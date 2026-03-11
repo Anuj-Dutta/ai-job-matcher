@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/job")
@@ -28,5 +29,11 @@ public class JobController {
     @GetMapping("/all")
     public List<Job> getAllJobs() {
         return jobService.getAllJobs();
+    }
+
+    @PostMapping("/backfill-embeddings")
+    public Map<String, Integer> backfillEmbeddings() {
+        int updatedJobs = jobService.backfillMissingEmbeddings();
+        return Map.of("updatedJobs", updatedJobs);
     }
 }
