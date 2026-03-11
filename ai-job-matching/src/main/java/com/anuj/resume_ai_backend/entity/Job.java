@@ -1,5 +1,6 @@
 package com.anuj.resume_ai_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -28,6 +29,7 @@ public class Job {
 
     private String externalId;
 
+    @JsonIgnore
     @Lob
     @Column(columnDefinition = "TEXT")
     private String embedding;
