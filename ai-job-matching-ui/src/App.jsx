@@ -7,6 +7,7 @@ function App() {
     const [email, setEmail] = useState('');
     const [resumeId, setResumeId] = useState(null);
     const [jobs, setJobs] = useState([]);
+    const [emailFeedback, setEmailFeedback] = useState(null);
     const [dark, setDark] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [matching, setMatching] = useState(false);
@@ -43,8 +44,15 @@ function App() {
                 body: formData,
             });
 
+            if (!response.ok) {
+                throw new Error('Resume upload failed.');
+            }
+
             const data = await response.json();
             setResumeId(data.id);
+            setEmailFeedback(null);
+        } catch (error) {
+            alert(error.message);
         } finally {
             setUploading(false);
         }
@@ -59,10 +67,23 @@ function App() {
 
         try {
             const response = await fetch(`${API_BASE_URL}/match/${resumeId}`);
+            if (!response.ok) {
+                throw new Error('Job matching failed.');
+            }
+
+            const emailStatus = response.headers.get('X-Email-Status');
+            const emailMessage = response.headers.get('X-Email-Message');
             const data = await response.json();
             const sortedJobs = data.sort((a, b) => b.matchScore - a.matchScore);
 
             setJobs(sortedJobs);
+            setEmailFeedback(
+                emailStatus && emailMessage
+                    ? { status: emailStatus, message: emailMessage }
+                    : null
+            );
+        } catch (error) {
+            alert(error.message);
         } finally {
             setMatching(false);
         }
@@ -119,6 +140,12 @@ function App() {
                         <p>AI is matching jobs...</p>
                     </div>
                 )}
+
+                {emailFeedback && (
+                    <p className={`emailFeedback emailFeedback-${emailFeedback.status}`}>
+                        {emailFeedback.message}
+                    </p>
+                )}
             </div>
 
             {jobs.map((job, index) => (
@@ -133,7 +160,7 @@ function App() {
                     </div>
 
                     <div className="company">
-                        {job.company} � {job.location}
+                        {job.company} at {job.location}
                     </div>
 
                     <div className="score">Match Score: {(job.matchScore * 100).toFixed(1)}%</div>
@@ -156,7 +183,7 @@ function App() {
                 <p>AI Resume Job Matcher</p>
             </div>
 
-            <div className="watermark">Anuj Dutta � AI Job Matcher</div>
+            <div className="watermark">Anuj Dutta | AI Job Matcher</div>
         </div>
     );
 }

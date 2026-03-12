@@ -16,11 +16,15 @@ services:
         value: false
       - key: JOBS_IMPORT_SCHEDULER_ENABLED
         value: false
+      - key: MAIL_ENABLED
+        value: true
       - key: DB_URL
         sync: false
       - key: DB_USERNAME
         sync: false
       - key: DB_PASSWORD
+        sync: false
+      - key: MAIL_FROM
         sync: false
       - key: MAIL_USERNAME
         sync: false

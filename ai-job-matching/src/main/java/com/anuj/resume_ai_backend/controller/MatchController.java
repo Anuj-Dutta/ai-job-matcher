@@ -3,8 +3,10 @@ package com.anuj.resume_ai_backend.controller;
 import com.anuj.resume_ai_backend.entity.Job;
 import com.anuj.resume_ai_backend.entity.Resume;
 import com.anuj.resume_ai_backend.repository.ResumeRepository;
+import com.anuj.resume_ai_backend.service.EmailDeliveryResult;
 import com.anuj.resume_ai_backend.service.EmailService;
 import com.anuj.resume_ai_backend.service.MatchingService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,7 +35,7 @@ public class MatchController {
     }
 
     @GetMapping("/{resumeId}")
-    public List<Job> matchJobs(@PathVariable Long resumeId) {
+    public ResponseEntity<List<Job>> matchJobs(@PathVariable Long resumeId) {
         Resume resume = resumeRepository.findById(resumeId).orElseThrow();
         List<Job> jobs = matchingService.matchJobs(resume);
 
@@ -49,7 +51,11 @@ public class MatchController {
                     .append("\n\n");
         }
 
-        emailService.sendEmail(resume.getEmail(), "Your Job Matches", body.toString());
-        return jobs;
+        EmailDeliveryResult deliveryResult = emailService.sendEmail(resume.getEmail(), "Your Job Matches", body.toString());
+
+        return ResponseEntity.ok()
+                .header("X-Email-Status", deliveryResult.status())
+                .header("X-Email-Message", deliveryResult.message())
+                .body(jobs);
     }
 }
