@@ -202,6 +202,11 @@ mvn spring-boot:run
 Backend runs on:
 http://localhost:8080
 
+Email delivery note:
+Set `RESEND_API_KEY` and `MAIL_FROM` before using email delivery.
+`MAIL_FROM` must be a verified Resend sender such as `AI Job Matcher <noreply@your-domain.com>`.
+The default Resend onboarding sender only supports test deliveries and will not send to arbitrary recipient accounts.
+
 ---
 
 # Frontend Setup

@@ -21,8 +21,6 @@ public class EmailServiceImpl implements EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailServiceImpl.class);
     private static final String RESEND_API_URL = "https://api.resend.com/emails";
-    private static final String DEFAULT_FROM_ADDRESS = "AI Job Matcher <onboarding@resend.dev>";
-
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
     private final String apiKey;
@@ -42,9 +40,8 @@ public class EmailServiceImpl implements EmailService {
 
         this.apiKey = apiKey == null ? "" : apiKey.trim();
 
-        String normalizedFromAddress = fromAddress == null ? "" : fromAddress.trim();
-        this.fromAddress = normalizedFromAddress.isEmpty() ? DEFAULT_FROM_ADDRESS : normalizedFromAddress;
-        this.mailEnabled = mailEnabled && !this.apiKey.isEmpty();
+        this.fromAddress = fromAddress == null ? "" : fromAddress.trim();
+        this.mailEnabled = mailEnabled && !this.apiKey.isEmpty() && !this.fromAddress.isEmpty();
     }
 
     @Override
@@ -56,7 +53,7 @@ public class EmailServiceImpl implements EmailService {
 
         if (!mailEnabled) {
             logger.warn("Email delivery skipped for {} because the Resend configuration is incomplete.", to);
-            return EmailDeliveryResult.skipped("Email delivery is disabled or missing RESEND_API_KEY.");
+            return EmailDeliveryResult.skipped("Email delivery is disabled or missing RESEND_API_KEY/MAIL_FROM. MAIL_FROM must be a verified Resend sender to email all recipients.");
         }
 
         try {
