@@ -26,8 +26,24 @@ services:
         sync: false
       - key: MAIL_FROM
         sync: false
-      - key: RESEND_API_KEY
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
         sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_SMTP_AUTH
+        value: true
+      - key: MAIL_SMTP_STARTTLS_ENABLE
+        value: true
+      - key: MAIL_SMTP_CONNECTION_TIMEOUT
+        value: "5000"
+      - key: MAIL_SMTP_TIMEOUT
+        value: "5000"
+      - key: MAIL_SMTP_WRITE_TIMEOUT
+        value: "5000"
       - key: ADZUNA_APP_ID
         sync: false
       - key: ADZUNA_APP_KEY

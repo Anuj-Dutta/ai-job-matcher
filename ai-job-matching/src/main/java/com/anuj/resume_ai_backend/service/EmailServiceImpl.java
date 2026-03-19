@@ -1,47 +1,40 @@
 package com.anuj.resume_ai_backend.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailAuthenticationException;
+import org.springframework.mail.MailException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
 
 @Service
 public class EmailServiceImpl implements EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailServiceImpl.class);
-    private static final String RESEND_API_URL = "https://api.resend.com/emails";
-    private final ObjectMapper objectMapper;
-    private final HttpClient httpClient;
-    private final String apiKey;
+
+    private final JavaMailSender mailSender;
     private final String fromAddress;
     private final boolean mailEnabled;
 
     public EmailServiceImpl(
-            ObjectMapper objectMapper,
-            @Value("${app.mail.api-key:${RESEND_API_KEY:}}") String apiKey,
+            JavaMailSender mailSender,
             @Value("${app.mail.from:${MAIL_FROM:}}") String fromAddress,
+            @Value("${spring.mail.username:${MAIL_USERNAME:}}") String mailUsername,
+            @Value("${spring.mail.password:${MAIL_PASSWORD:}}") String mailPassword,
             @Value("${app.mail.enabled:true}") boolean mailEnabled
     ) {
-        this.objectMapper = objectMapper;
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
-
-        this.apiKey = apiKey == null ? "" : apiKey.trim();
-
+        this.mailSender = mailSender;
         this.fromAddress = fromAddress == null ? "" : fromAddress.trim();
-        this.mailEnabled = mailEnabled && !this.apiKey.isEmpty() && !this.fromAddress.isEmpty();
+
+        String normalizedUsername = mailUsername == null ? "" : mailUsername.trim();
+        String normalizedPassword = mailPassword == null ? "" : mailPassword.trim();
+
+        this.mailEnabled = mailEnabled
+                && !this.fromAddress.isEmpty()
+                && !normalizedUsername.isEmpty()
+                && !normalizedPassword.isEmpty();
     }
 
     @Override
@@ -52,68 +45,29 @@ public class EmailServiceImpl implements EmailService {
         }
 
         if (!mailEnabled) {
-            logger.warn("Email delivery skipped for {} because the Resend configuration is incomplete.", to);
-            return EmailDeliveryResult.skipped("Email delivery is disabled or missing RESEND_API_KEY/MAIL_FROM. MAIL_FROM must be a verified Resend sender to email all recipients.");
+            logger.warn("Email delivery skipped for {} because the SMTP configuration is incomplete.", to);
+            return EmailDeliveryResult.skipped("Email delivery is disabled or missing MAIL_FROM/MAIL_USERNAME/MAIL_PASSWORD.");
         }
 
         try {
-            String payload = objectMapper.writeValueAsString(Map.of(
-                    "from", fromAddress,
-                    "to", List.of(to),
-                    "subject", subject,
-                    "text", body
-            ));
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromAddress);
+            message.setTo(to.trim());
+            message.setSubject(subject);
+            message.setText(body);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(RESEND_API_URL))
-                    .timeout(Duration.ofSeconds(15))
-                    .header("Authorization", "Bearer " + apiKey)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(payload))
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                logger.info("Email sent successfully to {} via Resend", to);
-                return EmailDeliveryResult.sent("Email sent successfully.");
-            }
-
-            String errorMessage = extractErrorMessage(response.body());
-            logger.error("Resend rejected email for {} with status {} and body {}", to, response.statusCode(), response.body());
-            return EmailDeliveryResult.failed("Email delivery failed: " + errorMessage);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.error("Email delivery interrupted for {}", to, e);
-            return EmailDeliveryResult.failed("Email delivery was interrupted. Please try again.");
-        } catch (IOException e) {
-            logger.error("Network error while sending email to {} via Resend", to, e);
-            return EmailDeliveryResult.failed("Email delivery failed due to a network error while contacting Resend.");
+            mailSender.send(message);
+            logger.info("Email sent successfully to {} via SMTP", to);
+            return EmailDeliveryResult.sent("Email sent successfully.");
+        } catch (MailAuthenticationException e) {
+            logger.error("SMTP authentication failed for {}", to, e);
+            return EmailDeliveryResult.failed("SMTP authentication failed. For Gmail, use your Gmail address as MAIL_USERNAME and a Google App Password as MAIL_PASSWORD.");
+        } catch (MailException e) {
+            logger.error("SMTP rejected email for {}", to, e);
+            return EmailDeliveryResult.failed("Email delivery failed via SMTP. Check MAIL_FROM, Gmail App Password, and recipient address.");
         } catch (Exception e) {
             logger.error("Unexpected email failure for {}", to, e);
             return EmailDeliveryResult.failed("Email delivery failed unexpectedly. Check the Render logs for the exact error.");
         }
-    }
-
-    private String extractErrorMessage(String responseBody) {
-        if (responseBody == null || responseBody.isBlank()) {
-            return "The email API returned an empty error response.";
-        }
-
-        try {
-            JsonNode jsonNode = objectMapper.readTree(responseBody);
-
-            if (jsonNode.hasNonNull("message")) {
-                return jsonNode.get("message").asText();
-            }
-
-            if (jsonNode.hasNonNull("error")) {
-                return jsonNode.get("error").asText();
-            }
-        } catch (Exception ignored) {
-            // Fall back to the raw response body when the API response is not JSON.
-        }
-
-        return responseBody;
     }
 }
