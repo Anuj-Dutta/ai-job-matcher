@@ -18,6 +18,8 @@ services:
         value: false
       - key: MAIL_ENABLED
         value: true
+      - key: MAIL_PROVIDER
+        value: brevo
       - key: DB_URL
         sync: false
       - key: DB_USERNAME
@@ -26,24 +28,14 @@ services:
         sync: false
       - key: MAIL_FROM
         sync: false
-      - key: MAIL_HOST
-        value: smtp.gmail.com
-      - key: MAIL_PORT
-        value: "587"
-      - key: MAIL_USERNAME
+      - key: BREVO_API_KEY
         sync: false
-      - key: MAIL_PASSWORD
-        sync: false
-      - key: MAIL_SMTP_AUTH
-        value: true
-      - key: MAIL_SMTP_STARTTLS_ENABLE
-        value: true
-      - key: MAIL_SMTP_CONNECTION_TIMEOUT
+      - key: BREVO_BASE_URL
+        value: https://api.brevo.com/v3/smtp/email
+      - key: MAIL_CONNECTION_TIMEOUT_MS
         value: "5000"
-      - key: MAIL_SMTP_TIMEOUT
-        value: "5000"
-      - key: MAIL_SMTP_WRITE_TIMEOUT
-        value: "5000"
+      - key: MAIL_READ_TIMEOUT_MS
+        value: "10000"
       - key: ADZUNA_APP_ID
         sync: false
       - key: ADZUNA_APP_KEY
