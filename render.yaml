@@ -19,7 +19,7 @@ services:
       - key: MAIL_ENABLED
         value: true
       - key: MAIL_PROVIDER
-        value: brevo
+        value: gmail-api
       - key: DB_URL
         sync: false
       - key: DB_USERNAME
@@ -28,10 +28,16 @@ services:
         sync: false
       - key: MAIL_FROM
         sync: false
-      - key: BREVO_API_KEY
+      - key: GMAIL_CLIENT_ID
         sync: false
-      - key: BREVO_BASE_URL
-        value: https://api.brevo.com/v3/smtp/email
+      - key: GMAIL_CLIENT_SECRET
+        sync: false
+      - key: GMAIL_REFRESH_TOKEN
+        sync: false
+      - key: GMAIL_TOKEN_URL
+        value: https://oauth2.googleapis.com/token
+      - key: GMAIL_SEND_URL
+        value: https://gmail.googleapis.com/gmail/v1/users/me/messages/send
       - key: MAIL_CONNECTION_TIMEOUT_MS
         value: "5000"
       - key: MAIL_READ_TIMEOUT_MS
