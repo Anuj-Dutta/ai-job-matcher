@@ -1,267 +1,203 @@
-# AI Job Matcher
+# AI Resume Screening and Job Matching
 
-An AI-powered system that analyzes a candidate's resume and automatically matches it with relevant job opportunities using semantic similarity and embeddings.
+AI-powered resume screening and job matching application with a Spring Boot backend and a React/Vite frontend.
 
-The platform allows users to upload their resume, extracts meaningful information, compares it with job descriptions from the Adzuna API, and ranks the most relevant jobs based on AI-driven similarity scores.
+The system accepts a resume, extracts its content, compares it against imported job listings, ranks the best matches, and emails the results to the candidate.
 
-Users receive the job recommendations directly on the interface and via email.
+## Features
 
----
+- Resume upload and parsing
+- AI-based semantic job matching
+- Adzuna job import and persistence
+- Ranked job recommendations
+- Email delivery of matched jobs through the Gmail API
+- React frontend for upload and result display
 
-# Features
+## Tech Stack
 
-### Resume Upload
-Users can upload their resume (PDF format) through a clean web interface.
-
-### AI Resume Analysis
-The system extracts text from the resume and generates semantic embeddings.
-
-### Smart Job Matching
-Jobs are matched using **semantic similarity**, not just keyword matching.
-
-### Job Aggregation
-Jobs are automatically fetched from the **Adzuna Job API** and stored in the database.
-
-### Ranking System
-Jobs are ranked based on similarity score to show the most relevant opportunities first.
-
-### Email Notification
-Top matching jobs are automatically sent to the user's email.
-
-### Modern User Interface
-The frontend includes:
-
-- Dark / Light mode toggle
-- Animated loading indicators
-- Job ranking visualization
-- Match score progress bars
-- Responsive centered layout
-
----
-
-## System Architecture
-
-```
-                +----------------------+
-                |      User (UI)       |
-                |   React Frontend     |
-                +----------+-----------+
-                           |
-                           v
-                +----------------------+
-                |   Resume Upload API  |
-                |    Spring Boot       |
-                +----------+-----------+
-                           |
-                           v
-                +----------------------+
-                | Resume Text Extractor|
-                |   (PDF Parsing)      |
-                +----------+-----------+
-                           |
-                           v
-                +----------------------+
-                | Embedding Generator  |
-                |   Semantic Vectors   |
-                +----------+-----------+
-                           |
-                           v
-                +----------------------+
-                |   Job Import System  |
-                |    Adzuna API        |
-                +----------+-----------+
-                           |
-                           v
-                +----------------------+
-                | Job Database (PostgreSQL) |
-                +----------+-----------+
-                           |
-                           v
-                +----------------------+
-                | Matching Engine      |
-                | Cosine Similarity    |
-                +----------+-----------+
-                           |
-                +----------+-----------+
-                |                      |
-                v                      v
-        +---------------+      +---------------+
-        |   Web UI      |      |  Email Alerts |
-        |  Job Results  |      |  Notification |
-        +---------------+      +---------------+
-```
-
-# Tech Stack
-
-## Backend
-- Java
-- Spring Boot
-- Spring Scheduler
-- Spring Mail
-- REST APIs
-
-## AI / Matching
-- Text Embeddings
-- Cosine Similarity
-
-## Database
+### Backend
+- Java 21
+- Spring Boot 3
+- Spring Data JPA
 - PostgreSQL
+- Apache Tika
+- Gmail API over HTTPS
 
-## Frontend
-- React
-- Vite
-- Modern CSS Animations
+### Frontend
+- React 19
+- Vite 7
 
-## External APIs
+### External APIs
 - Adzuna Job API
+- Gmail API
 
----
+## Repository Structure
 
-## Project Structure
-
-```
-ai-job-matcher
-│
-├── ai-job-matching-ui
-│   ├── public
-│   ├── src
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   └── index.css
-│   │
-│   ├── package.json
-│   └── vite.config.js
-│
-├── ai-job-matching
-│   └── src
-│       └── main
-│           ├── java
-│           │   └── com
-│           │       └── anuj
-│           │           └── resume_ai_backend
-│           │               ├── controller
-│           │               │   ├── MatchController.java
-│           │               │   └── ResumeController.java
-│           │               │
-│           │               ├── service
-│           │               │   ├── AdzunaService.java
-│           │               │   ├── EmailService.java
-│           │               │   ├── JobService.java
-│           │               │   ├── MatchingService.java
-│           │               │   └── ResumeService.java
-│           │               │
-│           │               ├── repository
-│           │               │   ├── JobRepository.java
-│           │               │   └── ResumeRepository.java
-│           │               │
-│           │               ├── entity
-│           │               │   ├── Job.java
-│           │               │   └── Resume.java
-│           │               │
-│           │               ├── scheduler
-│           │               │   └── JobImportScheduler.java
-│           │               │
-│           │               └── ai
-│           │                   └── EmbeddingService.java
-│           │
-│           └── resources
-│               └── application.properties
-│
-└── .gitignore
+```text
+ai-resume-screening-and-job-matching/
+|-- ai-job-matching/
+|   |-- src/main/java/com/anuj/resume_ai_backend/
+|   |-- src/main/resources/application.properties
+|   `-- pom.xml
+|-- ai-job-matching-ui/
+|   |-- src/
+|   |-- public/
+|   `-- package.json
+`-- render.yaml
 ```
 
-# How It Works
+## How It Works
 
-1. The user uploads a resume through the web interface.
+1. The user uploads a resume from the frontend.
 2. The backend extracts the resume text.
-3. The text is converted into a semantic embedding.
-4. Jobs are periodically fetched from the Adzuna API.
-5. Each job description is converted into an embedding.
-6. The system computes similarity between resume and job embeddings.
-7. Jobs are ranked by similarity score.
-8. Results are shown on the web interface and sent to the user's email.
+3. The backend computes similarity between the resume and stored jobs.
+4. Matched jobs are ranked by score.
+5. The ranked results are returned to the UI.
+6. The same results are emailed to the candidate through the Gmail API.
 
----
+## Local Setup
 
-# Installation & Setup
+### 1. Clone the repository
 
-## Clone the repository
-git clone https://github.com/YOUR_USERNAME/ai-job-matcher.git⁠
-cd ai-job-matcher
+```bash
+git clone https://github.com/YOUR_USERNAME/ai-resume-screening-and-job-matching.git
+cd ai-resume-screening-and-job-matching
+```
 
----
-# Backend Setup
-Navigate to the backend directory: cd ai-job-matching
+### 2. Backend setup
 
-# Configure database connection in `application.properties`:
-spring.datasource.url=jdbc:mysql://localhost:3306/resume_ai spring.datasource.username=your_username spring.datasource.password=your_password
+```bash
+cd ai-job-matching
+```
+
+Required environment variables:
+
+```properties
+DB_URL=jdbc:postgresql://localhost:5432/ai_job_matcher
+DB_USERNAME=your_db_user
+DB_PASSWORD=your_db_password
+ADZUNA_APP_ID=your_adzuna_app_id
+ADZUNA_APP_KEY=your_adzuna_app_key
+MAIL_ENABLED=true
+MAIL_PROVIDER=gmail-api
+MAIL_FROM=yourgmail@gmail.com
+GMAIL_CLIENT_ID=your_google_client_id
+GMAIL_CLIENT_SECRET=your_google_client_secret
+GMAIL_REFRESH_TOKEN=your_google_refresh_token
+```
+
+Optional email-related defaults:
+
+```properties
+GMAIL_TOKEN_URL=https://oauth2.googleapis.com/token
+GMAIL_SEND_URL=https://gmail.googleapis.com/gmail/v1/users/me/messages/send
+MAIL_CONNECTION_TIMEOUT_MS=5000
+MAIL_READ_TIMEOUT_MS=10000
+```
 
 Run the backend:
-mvn spring-boot:run
 
-Backend runs on:
+```bash
+./mvnw spring-boot:run
+```
+
+Backend default URL:
+
+```text
 http://localhost:8080
+```
 
-Email delivery note:
-This project uses Gmail SMTP for email delivery.
-Set `MAIL_FROM`, `MAIL_USERNAME`, and `MAIL_PASSWORD` before using email delivery.
-For Gmail, set `MAIL_USERNAME` to your Gmail address and `MAIL_PASSWORD` to a Google App Password.
-`MAIL_FROM` should usually match your Gmail address, for example `yourname@gmail.com` or `AI Job Matcher <yourname@gmail.com>`.
+### 3. Frontend setup
 
----
-
-# Frontend Setup
-
-Navigate to the frontend directory:
-cd ai-job-matching-ui
-
-Install dependencies:
+```bash
+cd ../ai-job-matching-ui
 npm install
-
-Run the frontend:
 npm run dev
+```
 
-Frontend runs on:
+Frontend default URL:
+
+```text
 http://localhost:5173
+```
 
----
+## Gmail API Setup
 
-# Example Workflow
+This project sends email through the Gmail API instead of SMTP. That avoids outbound SMTP restrictions on free hosting platforms.
 
-1. Enter your email address
-2. Upload your resume
-3. Click **Find Jobs**
-4. AI analyzes resume and matches relevant jobs
-5. Jobs appear ranked by similarity score
-6. Top matches are emailed to you
+### 1. Enable Gmail API
+- Open Google Cloud Console
+- Create or select a project
+- Enable `Gmail API`
 
----
+### 2. Configure OAuth consent
+- Create an `External` app
+- Add your Gmail account as a test user
 
-# Example Output
-Backend Developer — Match Score: 82%
-Software Engineer — Match Score: 79%
-Full Stack Developer — Match Score: 75%
+### 3. Create OAuth credentials
+- Go to `APIs & Services` -> `Credentials`
+- Create an `OAuth client ID`
+- Choose `Web application`
+- Add this redirect URI exactly:
 
----
+```text
+https://developers.google.com/oauthplayground
+```
 
-# Future Improvements
+### 4. Get a refresh token
+- Open OAuth 2.0 Playground
+- Enable `Use your own OAuth credentials`
+- Paste the client ID and client secret
+- Request this scope:
+
+```text
+https://www.googleapis.com/auth/gmail.send
+```
+
+- Authorize with the Gmail account that will send mail
+- Exchange the authorization code for tokens
+- Copy the refresh token into `GMAIL_REFRESH_TOKEN`
+
+`MAIL_FROM` should match the Gmail account used during authorization.
+
+## Deployment Notes
+
+The included [render.yaml](./render.yaml) is configured for Render deployment.
+
+Important points:
+- Email uses the Gmail API over HTTPS
+- SMTP credentials are not used
+- Set the Google OAuth environment variables in Render before deploying
+- The backend service can stay on Render free because the Gmail API uses HTTPS instead of blocked SMTP ports
+
+## Example Flow
+
+1. Enter an email address in the frontend
+2. Upload a resume
+3. Trigger job matching
+4. Review ranked jobs in the UI
+5. Receive the same job matches by email
+
+## API Behavior
+
+When `/match/{resumeId}` is called:
+- the backend computes job matches
+- it attempts to send the email
+- it returns the jobs in the response body
+- it also returns email delivery information in response headers
+
+## Future Improvements
 
 - Skill gap analysis
-- Salary filtering
-- Location filtering
-- Save favorite jobs
-- Deploy to cloud infrastructure
-- Support for multiple job APIs
+- Salary filters
+- Location filters
+- Saved job lists
+- Additional job providers
 
----
+## Author
 
-# Author
+Anuj Dutta
 
-Anuj Dutta  
-Email: dattaanuj1804@gmail.com
+## License
 
----
-
-# License
-
-This project is open source and available under the MIT License.
+MIT
