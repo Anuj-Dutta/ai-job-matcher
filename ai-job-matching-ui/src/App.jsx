@@ -104,7 +104,14 @@ function App() {
                 </div>
             </div>
 
-            <h1 className="title">JobHunt</h1>
+            <div className="brandLockup">
+                <img
+                    className="brandLogo"
+                    src="/jobhunt-logo-alt-3.svg"
+                    alt="JobHunt logo"
+                />
+                <h1 className="title">JobHunt</h1>
+            </div>
 
             <div className="card">
                 <input

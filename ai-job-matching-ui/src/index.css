@@ -39,10 +39,25 @@ body {
 }
 
 .title {
-    margin-bottom: 20px;
+    margin: 0;
     font-size: 38px;
     font-weight: 700;
     animation: fade-down 0.6s ease;
+}
+
+.brandLockup {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    animation: fade-down 0.6s ease;
+}
+
+.brandLogo {
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 10px 20px rgba(23, 50, 77, 0.16));
 }
 
 .themeRow {
@@ -450,6 +465,20 @@ input:checked + .slider::before {
         padding: 8px 12px;
         margin-bottom: 0;
         font-size: 13px;
+    }
+
+    .brandLockup {
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .brandLogo {
+        width: 56px;
+        height: 56px;
+    }
+
+    .title {
+        font-size: 32px;
     }
 
     .instructionsHeader {
