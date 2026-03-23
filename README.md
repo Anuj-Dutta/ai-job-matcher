@@ -1,70 +1,111 @@
-# AI Resume Screening and Job Matching
+# JobHunt
 
-AI-powered resume screening and job matching application with a Spring Boot backend and a React/Vite frontend.
+JobHunt is a full-stack resume-to-jobs application with a Spring Boot backend and a React/Vite frontend.
 
-The system accepts a resume, extracts its content, compares it against imported job listings, ranks the best matches, and emails the results to the candidate.
+The app lets a user upload a resume, extracts profile signals from it, pulls in relevant jobs, ranks the strongest matches, shows them in the UI, and emails the shortlist to the user.
 
-## Features
+## What It Does
 
-- Resume upload and parsing
-- AI-based semantic job matching
-- Adzuna job import and persistence
-- Ranked job recommendations
-- Email delivery of matched jobs through the Gmail API
-- React frontend for upload and result display
+- Uploads and parses resumes
+- Extracts skills and resume keywords
+- Generates embeddings for semantic matching
+- Imports a broad set of jobs from Adzuna
+- Fetches resume-specific jobs before matching
+- Ranks jobs with a hybrid scoring pipeline
+- Emails the final shortlist through the Gmail API
+
+## Current Matching Approach
+
+JobHunt no longer relies only on a generic job pool plus pure cosine similarity.
+
+The backend now:
+
+1. Parses the resume text with Apache Tika
+2. Extracts skills and high-signal keywords
+3. Generates an embedding for semantic comparison
+4. Imports general jobs for baseline coverage
+5. Fetches targeted jobs based on the uploaded resume
+6. Shortlists candidate jobs using keyword and skill overlap
+7. Re-ranks candidates with a hybrid score built from:
+   - embedding similarity
+   - skill overlap
+   - keyword overlap
+   - title overlap
+   - exact phrase boosts
+
+This produces stronger matches and broader non-developer coverage than the earlier developer-heavy flow.
 
 ## Tech Stack
 
 ### Backend
+
 - Java 21
 - Spring Boot 3
+- Spring Web
 - Spring Data JPA
 - PostgreSQL
 - Apache Tika
-- Gmail API over HTTPS
+- Jackson
+- Gmail API
 
 ### Frontend
+
 - React 19
 - Vite 7
+- CSS
 
-### External APIs
+### External Services
+
 - Adzuna Job API
+- Hugging Face inference router
 - Gmail API
 
 ## Repository Structure
 
 ```text
 ai-resume-screening-and-job-matching/
-|-- ai-job-matching/
-|   |-- src/main/java/com/anuj/resume_ai_backend/
-|   |-- src/main/resources/application.properties
-|   `-- pom.xml
-|-- ai-job-matching-ui/
-|   |-- src/
-|   |-- public/
-|   `-- package.json
-`-- render.yaml
+|-- ai-job-matching/        # Spring Boot backend
+|-- ai-job-matching-ui/     # React frontend
+|-- render.yaml             # Render deployment config
+`-- README.md
 ```
 
-## How It Works
+## Main API Flow
 
-1. The user uploads a resume from the frontend.
-2. The backend extracts the resume text.
-3. The backend computes similarity between the resume and stored jobs.
-4. Matched jobs are ranked by score.
-5. The ranked results are returned to the UI.
-6. The same results are emailed to the candidate through the Gmail API.
+### Resume Upload
+
+`POST /resume/upload`
+
+- accepts `email` and `file`
+- parses the resume
+- extracts skills
+- generates an embedding
+- stores the resume in PostgreSQL
+- returns the saved resume with its ID
+
+### Matching
+
+`GET /match/{resumeId}`
+
+- ensures jobs are ready
+- fetches resume-driven jobs from Adzuna when needed
+- scores and ranks matching jobs
+- sends email with the shortlist
+- returns matched jobs in the response body
+- returns email delivery info in:
+  - `X-Email-Status`
+  - `X-Email-Message`
 
 ## Local Setup
 
-### 1. Clone the repository
+### 1. Clone
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/ai-resume-screening-and-job-matching.git
 cd ai-resume-screening-and-job-matching
 ```
 
-### 2. Backend setup
+### 2. Backend Setup
 
 ```bash
 cd ai-job-matching
@@ -78,6 +119,7 @@ DB_USERNAME=your_db_user
 DB_PASSWORD=your_db_password
 ADZUNA_APP_ID=your_adzuna_app_id
 ADZUNA_APP_KEY=your_adzuna_app_key
+HF_TOKEN=your_huggingface_token
 MAIL_ENABLED=true
 MAIL_PROVIDER=gmail-api
 MAIL_FROM=yourgmail@gmail.com
@@ -86,13 +128,17 @@ GMAIL_CLIENT_SECRET=your_google_client_secret
 GMAIL_REFRESH_TOKEN=your_google_refresh_token
 ```
 
-Optional email-related defaults:
+Optional backend variables:
 
 ```properties
+HF_EMBEDDING_API=https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction
 GMAIL_TOKEN_URL=https://oauth2.googleapis.com/token
 GMAIL_SEND_URL=https://gmail.googleapis.com/gmail/v1/users/me/messages/send
 MAIL_CONNECTION_TIMEOUT_MS=5000
 MAIL_READ_TIMEOUT_MS=10000
+JOBS_IMPORT_SCHEDULER_ENABLED=false
+JOBS_IMPORT_SCHEDULER_FIXED_RATE_MS=3600000
+JOBS_IMPORT_SCHEDULER_INITIAL_DELAY_MS=60000
 ```
 
 Run the backend:
@@ -101,13 +147,13 @@ Run the backend:
 ./mvnw spring-boot:run
 ```
 
-Backend default URL:
+Default backend URL:
 
 ```text
 http://localhost:8080
 ```
 
-### 3. Frontend setup
+### 3. Frontend Setup
 
 ```bash
 cd ../ai-job-matching-ui
@@ -115,7 +161,7 @@ npm install
 npm run dev
 ```
 
-Frontend default URL:
+Default frontend URL:
 
 ```text
 http://localhost:5173
@@ -123,76 +169,54 @@ http://localhost:5173
 
 ## Gmail API Setup
 
-This project sends email through the Gmail API instead of SMTP. That avoids outbound SMTP restrictions on free hosting platforms.
+This project sends mail through Gmail API over HTTPS instead of SMTP.
 
-### 1. Enable Gmail API
-- Open Google Cloud Console
-- Create or select a project
-- Enable `Gmail API`
+### Steps
 
-### 2. Configure OAuth consent
-- Create an `External` app
-- Add your Gmail account as a test user
-
-### 3. Create OAuth credentials
-- Go to `APIs & Services` -> `Credentials`
-- Create an `OAuth client ID`
-- Choose `Web application`
-- Add this redirect URI exactly:
+1. Create or select a Google Cloud project
+2. Enable `Gmail API`
+3. Configure OAuth consent
+4. Create OAuth client credentials
+5. Add this redirect URI:
 
 ```text
 https://developers.google.com/oauthplayground
 ```
 
-### 4. Get a refresh token
-- Open OAuth 2.0 Playground
-- Enable `Use your own OAuth credentials`
-- Paste the client ID and client secret
-- Request this scope:
+6. Use OAuth Playground to request:
 
 ```text
 https://www.googleapis.com/auth/gmail.send
 ```
 
-- Authorize with the Gmail account that will send mail
-- Exchange the authorization code for tokens
-- Copy the refresh token into `GMAIL_REFRESH_TOKEN`
+7. Exchange the code for tokens and copy the refresh token into `GMAIL_REFRESH_TOKEN`
 
-`MAIL_FROM` should match the Gmail account used during authorization.
+`MAIL_FROM` must match the Gmail account used during authorization.
 
-## Deployment Notes
+## Deployment
 
-The included [render.yaml](./render.yaml) is configured for Render deployment.
+The included [render.yaml](/C:/Users/datta/Projects/ai-resume-screening-and-job-matching/render.yaml) is set up for Render:
 
-Important points:
-- Email uses the Gmail API over HTTPS
-- SMTP credentials are not used
-- Set the Google OAuth environment variables in Render before deploying
-- The backend service can stay on Render free because the Gmail API uses HTTPS instead of blocked SMTP ports
+- backend deploys as a Docker web service
+- frontend deploys as a static site
+- Gmail API works over HTTPS, which avoids SMTP restrictions on free hosting
 
-## Example Flow
+Before deployment, set the required environment variables in Render.
 
-1. Enter an email address in the frontend
-2. Upload a resume
-3. Trigger job matching
-4. Review ranked jobs in the UI
-5. Receive the same job matches by email
+## Notes
 
-## API Behavior
+- The frontend currently points to a deployed backend URL in `App.jsx`
+- Replace the placeholder GitHub URL in docs/footer with your actual repo URL
+- Matching is much stronger than the original baseline, but it is still a synchronous request flow and not yet built for high concurrency
 
-When `/match/{resumeId}` is called:
-- the backend computes job matches
-- it attempts to send the email
-- it returns the jobs in the response body
-- it also returns email delivery information in response headers
+## Future Work
 
-## Future Improvements
-
-- Skill gap analysis
-- Salary filters
-- Location filters
-- Saved job lists
-- Additional job providers
+- Vector-native retrieval
+- Asynchronous email and import workers
+- Better match explanations
+- More job providers
+- Role/category classification
+- Recruiter-side dashboard
 
 ## Author
 
