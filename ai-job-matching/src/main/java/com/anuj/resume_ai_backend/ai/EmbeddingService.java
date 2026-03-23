@@ -28,7 +28,7 @@ public class EmbeddingService {
 
     @Autowired
     public EmbeddingService(
-            @Value("${ai.embedding.hf.api:https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2}") String hfApi,
+            @Value("${ai.embedding.hf.api:https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction}") String hfApi,
             @Value("${HF_TOKEN:}") String hfToken
     ) {
         this(new RestTemplate(), hfApi, hfToken);
