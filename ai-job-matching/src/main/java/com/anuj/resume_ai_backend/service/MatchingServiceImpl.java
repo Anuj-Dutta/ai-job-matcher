@@ -194,7 +194,7 @@ public class MatchingServiceImpl implements MatchingService {
         double keywordScore = TextProfileUtils.overlapScore(resumeTokens, jobTokens);
         double titleScore = TextProfileUtils.overlapScore(resumeTokens, titleTokens);
 
-        double exactBoost = hasStrongPhraseOverlap(resume, job) ? 0.08 : 0.0;
+        double exactBoost = hasStrongPhraseOverlap(safeLower(resume.getResumeText()), job) ? 0.08 : 0.0;
         return (0.50 * embeddingScore)
                 + (0.25 * skillScore)
                 + (0.15 * keywordScore)

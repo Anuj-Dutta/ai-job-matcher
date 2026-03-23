@@ -158,26 +158,26 @@ public final class TextProfileUtils {
             return;
         }
 
-        Map<String, List<String>> rolePatterns = Map.of(
-                "software", List.of("software engineer", "developer", "full stack developer"),
-                "java", List.of("java developer", "backend developer"),
-                "python", List.of("python developer", "data analyst"),
-                "data", List.of("data analyst", "data engineer", "data scientist"),
-                "support", List.of("customer support", "customer success", "technical support"),
-                "sales", List.of("sales executive", "business development"),
-                "marketing", List.of("digital marketing", "seo specialist", "content writer"),
-                "finance", List.of("accountant", "financial analyst", "bookkeeping"),
-                "accounting", List.of("accountant", "bookkeeping"),
-                "hr", List.of("hr executive", "recruiter", "talent acquisition"),
-                "recruitment", List.of("recruiter", "talent acquisition"),
-                "design", List.of("graphic designer", "ui ux designer"),
-                "healthcare", List.of("healthcare assistant", "nurse", "pharmacist"),
-                "teaching", List.of("teacher", "education counselor"),
-                "education", List.of("teacher", "education counselor"),
-                "qa", List.of("qa engineer", "automation tester"),
-                "testing", List.of("qa engineer", "automation tester"),
-                "project", List.of("project manager", "business analyst"),
-                "product", List.of("product manager", "business analyst")
+        Map<String, List<String>> rolePatterns = Map.ofEntries(
+                Map.entry("software", List.of("software engineer", "developer", "full stack developer")),
+                Map.entry("java", List.of("java developer", "backend developer")),
+                Map.entry("python", List.of("python developer", "data analyst")),
+                Map.entry("data", List.of("data analyst", "data engineer", "data scientist")),
+                Map.entry("support", List.of("customer support", "customer success", "technical support")),
+                Map.entry("sales", List.of("sales executive", "business development")),
+                Map.entry("marketing", List.of("digital marketing", "seo specialist", "content writer")),
+                Map.entry("finance", List.of("accountant", "financial analyst", "bookkeeping")),
+                Map.entry("accounting", List.of("accountant", "bookkeeping")),
+                Map.entry("hr", List.of("hr executive", "recruiter", "talent acquisition")),
+                Map.entry("recruitment", List.of("recruiter", "talent acquisition")),
+                Map.entry("design", List.of("graphic designer", "ui ux designer")),
+                Map.entry("healthcare", List.of("healthcare assistant", "nurse", "pharmacist")),
+                Map.entry("teaching", List.of("teacher", "education counselor")),
+                Map.entry("education", List.of("teacher", "education counselor")),
+                Map.entry("qa", List.of("qa engineer", "automation tester")),
+                Map.entry("testing", List.of("qa engineer", "automation tester")),
+                Map.entry("project", List.of("project manager", "business analyst")),
+                Map.entry("product", List.of("product manager", "business analyst"))
         );
 
         for (Map.Entry<String, List<String>> entry : rolePatterns.entrySet()) {
