@@ -1,9 +1,7 @@
 package com.anuj.resume_ai_backend.ai;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -14,7 +12,7 @@ public final class TextProfileUtils {
     private static final Set<String> STOP_WORDS = Set.of(
             "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has", "he", "in", "is",
             "it", "its", "of", "on", "or", "that", "the", "their", "this", "to", "was", "were", "will",
-            "with", "you", "your", "we", "our", "they", "them", "with", "using", "use", "used", "into",
+            "with", "you", "your", "we", "our", "they", "them", "using", "use", "used", "into",
             "than", "then", "also", "over", "under", "such", "within", "across", "through", "per", "via"
     );
     private static final Set<String> SHORT_TOKEN_ALLOWLIST = Set.of(
@@ -96,9 +94,5 @@ public final class TextProfileUtils {
         }
 
         return (2.0 * overlap) / (left.size() + right.size());
-    }
-
-    public static List<String> tokenizeToList(String text) {
-        return Arrays.asList(normalizeText(text).split(" "));
     }
 }
