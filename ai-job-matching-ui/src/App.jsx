@@ -150,58 +150,60 @@ function App() {
                 )}
             </div>
 
-            <div className="instructionsCard">
-                <div className="instructionsHeader">
-                    <div>
-                        <h2 className="instructionsTitle">How To Use JobHunt</h2>
-                        <p className="instructionsSubtitle">A fast workflow from resume upload to ranked opportunities.</p>
-                    </div>
+            {jobs.length === 0 && (
+                <div className="instructionsCard">
+                    <div className="instructionsHeader">
+                        <div>
+                            <h2 className="instructionsTitle">How To Use JobHunt</h2>
+                            <p className="instructionsSubtitle">A fast workflow from resume upload to ranked opportunities.</p>
+                        </div>
 
-                    <div className="instructionsIllustrations" aria-hidden="true">
-                        <div className="illustrationCard">
-                            <div className="illustrationResume">
-                                <span className="illustrationLine lineShort" />
-                                <span className="illustrationLine" />
-                                <span className="illustrationLine" />
+                        <div className="instructionsIllustrations" aria-hidden="true">
+                            <div className="illustrationCard">
+                                <div className="illustrationResume">
+                                    <span className="illustrationLine lineShort" />
+                                    <span className="illustrationLine" />
+                                    <span className="illustrationLine" />
+                                </div>
+                            </div>
+                            <div className="illustrationPulse" />
+                            <div className="illustrationCard accentCard">
+                                <div className="illustrationBars">
+                                    <span className="bar barOne" />
+                                    <span className="bar barTwo" />
+                                    <span className="bar barThree" />
+                                </div>
                             </div>
                         </div>
-                        <div className="illustrationPulse" />
-                        <div className="illustrationCard accentCard">
-                            <div className="illustrationBars">
-                                <span className="bar barOne" />
-                                <span className="bar barTwo" />
-                                <span className="bar barThree" />
+                    </div>
+
+                    <div className="instructionGrid">
+                        <div className="instructionStep">
+                            <div className="instructionBadge">01</div>
+                            <div>
+                                <h3 className="instructionHeading">Upload Your Profile</h3>
+                                <p className="instructionItem">Enter your email and upload your latest resume in PDF or DOC/DOCX format.</p>
+                            </div>
+                        </div>
+
+                        <div className="instructionStep">
+                            <div className="instructionBadge">02</div>
+                            <div>
+                                <h3 className="instructionHeading">Let The Engine Parse</h3>
+                                <p className="instructionItem">JobHunt extracts skills, builds your profile, and prepares targeted job retrieval.</p>
+                            </div>
+                        </div>
+
+                        <div className="instructionStep">
+                            <div className="instructionBadge">03</div>
+                            <div>
+                                <h3 className="instructionHeading">Review Strong Matches</h3>
+                                <p className="instructionItem">Click `Find Jobs` to get ranked opportunities, open the apply links, and check your email for the same shortlist.</p>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div className="instructionGrid">
-                    <div className="instructionStep">
-                        <div className="instructionBadge">01</div>
-                        <div>
-                            <h3 className="instructionHeading">Upload Your Profile</h3>
-                            <p className="instructionItem">Enter your email and upload your latest resume in PDF or DOC/DOCX format.</p>
-                        </div>
-                    </div>
-
-                    <div className="instructionStep">
-                        <div className="instructionBadge">02</div>
-                        <div>
-                            <h3 className="instructionHeading">Let The Engine Parse</h3>
-                            <p className="instructionItem">JobHunt extracts skills, builds your profile, and prepares targeted job retrieval.</p>
-                        </div>
-                    </div>
-
-                    <div className="instructionStep">
-                        <div className="instructionBadge">03</div>
-                        <div>
-                            <h3 className="instructionHeading">Review Strong Matches</h3>
-                            <p className="instructionItem">Click `Find Jobs` to get ranked opportunities, open the apply links, and check your email for the same shortlist.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            )}
 
             {jobs.map((job, index) => (
                 <div key={`${job.applyLink}-${index}`} className={`jobCard ${index === 0 ? 'topMatch' : ''}`}>
@@ -232,23 +234,19 @@ function App() {
 
             <div className="footer">
                 <p>JobHunt</p>
-            </div>
-
-            <div className="bottomLeftMeta">
                 <p>Developer Contact : dattaanuj1804@gmail.com</p>
                 <p>
                     <a
                         className="footerLink"
-                        href="https://github.com/YOUR_USERNAME/ai-resume-screening-and-job-matching"
+                        href="https://github.com/Anuj-Dutta/ai-job-matcher"
                         target="_blank"
                         rel="noreferrer"
                     >
                         GitHub Project
                     </a>
                 </p>
+                <p className="watermark">Made with heart in India</p>
             </div>
-
-            <div className="watermark">Made with heart in India</div>
         </div>
     );
 }

@@ -413,23 +413,15 @@ input:checked + .slider::before {
 
 .footer {
     margin-top: 60px;
+    width: 650px;
+    max-width: 90%;
     font-size: 14px;
-    text-align: center;
+    text-align: left;
     opacity: 0.8;
 }
 
-.bottomLeftMeta {
-    position: fixed;
-    left: 20px;
-    bottom: 15px;
-    z-index: 20;
-    font-size: 13px;
-    line-height: 1.5;
-    opacity: 0.85;
-}
-
-.bottomLeftMeta p {
-    margin: 0 0 4px;
+.footer p {
+    margin: 0 0 6px;
 }
 
 .footerLink {
@@ -443,11 +435,8 @@ input:checked + .slider::before {
 }
 
 .watermark {
-    position: fixed;
-    right: 20px;
-    bottom: 15px;
     font-size: 12px;
-    opacity: 0.2;
+    opacity: 0.65;
 }
 
 @media (max-width: 640px) {
@@ -481,10 +470,8 @@ input:checked + .slider::before {
         width: 64px;
     }
 
-    .bottomLeftMeta {
-        left: 12px;
-        bottom: 12px;
-        font-size: 12px;
+    .footer {
+        font-size: 13px;
     }
 }
 
