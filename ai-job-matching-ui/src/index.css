@@ -31,6 +31,13 @@ body {
     padding: 60px 20px;
 }
 
+.topRightControls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 20;
+}
+
 .title {
     margin-bottom: 20px;
     font-size: 38px;
@@ -43,6 +50,12 @@ body {
     align-items: center;
     gap: 10px;
     margin-bottom: 25px;
+    padding: 10px 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 }
 
 .switch {
@@ -88,6 +101,7 @@ input:checked + .slider::before {
 }
 
 .card,
+.instructionsCard,
 .jobCard {
     width: 650px;
     max-width: 90%;
@@ -103,6 +117,12 @@ input:checked + .slider::before {
     margin-bottom: 30px;
     padding: 25px;
     transition: 0.3s ease;
+}
+
+.instructionsCard {
+    margin-bottom: 30px;
+    padding: 22px 24px;
+    overflow: hidden;
 }
 
 .card:hover,
@@ -148,6 +168,151 @@ input:checked + .slider::before {
 .button:hover {
     box-shadow: 0 10px 25px rgba(99, 102, 241, 0.35);
     transform: scale(1.06);
+}
+
+.instructionsTitle {
+    margin: 0 0 14px;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.instructionsHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 18px;
+}
+
+.instructionsSubtitle {
+    margin: 0;
+    line-height: 1.6;
+    opacity: 0.8;
+}
+
+.instructionsIllustrations {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.illustrationCard {
+    width: 88px;
+    height: 110px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(99, 102, 241, 0.18);
+    border-radius: 20px;
+    transform: rotate(-5deg);
+    animation: float-card 4.2s ease-in-out infinite;
+}
+
+.accentCard {
+    transform: rotate(6deg);
+    animation-delay: 0.6s;
+}
+
+.illustrationResume {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.illustrationLine {
+    display: block;
+    height: 8px;
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.95), rgba(79, 70, 229, 0.4));
+    border-radius: 999px;
+}
+
+.lineShort {
+    width: 58%;
+}
+
+.illustrationPulse {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(34, 197, 94, 0.9), rgba(34, 197, 94, 0.2));
+    animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+.illustrationBars {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 100%;
+}
+
+.bar {
+    width: 14px;
+    border-radius: 999px 999px 6px 6px;
+    background: linear-gradient(180deg, #22c55e, #16a34a);
+    animation: grow-bar 1.6s ease-in-out infinite;
+}
+
+.barOne {
+    height: 46px;
+}
+
+.barTwo {
+    height: 72px;
+    animation-delay: 0.2s;
+}
+
+.barThree {
+    height: 58px;
+    animation-delay: 0.4s;
+}
+
+.instructionGrid {
+    display: grid;
+    gap: 14px;
+}
+
+.instructionStep {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 14px;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.28);
+    border: 1px solid rgba(99, 102, 241, 0.12);
+    border-radius: 18px;
+    animation: slide-in-up 0.6s ease both;
+}
+
+.instructionStep:nth-child(2) {
+    animation-delay: 0.12s;
+}
+
+.instructionStep:nth-child(3) {
+    animation-delay: 0.24s;
+}
+
+.instructionBadge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #fff;
+    background: linear-gradient(135deg, #111827, #374151);
+    border-radius: 16px;
+}
+
+.instructionHeading {
+    margin: 0 0 6px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.instructionItem {
+    margin: 0 0 10px;
+    line-height: 1.6;
+    opacity: 0.88;
 }
 
 .jobCard {
@@ -253,12 +418,74 @@ input:checked + .slider::before {
     opacity: 0.8;
 }
 
+.bottomLeftMeta {
+    position: fixed;
+    left: 20px;
+    bottom: 15px;
+    z-index: 20;
+    font-size: 13px;
+    line-height: 1.5;
+    opacity: 0.85;
+}
+
+.bottomLeftMeta p {
+    margin: 0 0 4px;
+}
+
+.footerLink {
+    color: var(--text);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.footerLink:hover {
+    text-decoration: underline;
+}
+
 .watermark {
     position: fixed;
     right: 20px;
     bottom: 15px;
     font-size: 12px;
     opacity: 0.2;
+}
+
+@media (max-width: 640px) {
+    .topRightControls {
+        top: 12px;
+        right: 12px;
+    }
+
+    .themeRow {
+        gap: 8px;
+        padding: 8px 12px;
+        margin-bottom: 0;
+        font-size: 13px;
+    }
+
+    .instructionsHeader {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .instructionsIllustrations {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .instructionStep {
+        grid-template-columns: 1fr;
+    }
+
+    .instructionBadge {
+        width: 64px;
+    }
+
+    .bottomLeftMeta {
+        left: 12px;
+        bottom: 12px;
+        font-size: 12px;
+    }
 }
 
 @keyframes fade-down {
@@ -292,5 +519,54 @@ input:checked + .slider::before {
 
     100% {
         transform: rotate(360deg);
+    }
+}
+
+@keyframes float-card {
+    0%,
+    100% {
+        transform: translateY(0) rotate(-5deg);
+    }
+
+    50% {
+        transform: translateY(-6px) rotate(-3deg);
+    }
+}
+
+@keyframes pulse-dot {
+    0%,
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.28);
+    }
+
+    50% {
+        transform: scale(1.08);
+        box-shadow: 0 0 0 12px rgba(34, 197, 94, 0);
+    }
+}
+
+@keyframes grow-bar {
+    0%,
+    100% {
+        transform: scaleY(0.9);
+        transform-origin: bottom;
+    }
+
+    50% {
+        transform: scaleY(1.08);
+        transform-origin: bottom;
+    }
+}
+
+@keyframes slide-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
