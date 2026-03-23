@@ -21,6 +21,7 @@ public class MatchingServiceImpl implements MatchingService {
 
     private static final double MATCH_THRESHOLD = 0.23;
     private static final double MINIMUM_FALLBACK_THRESHOLD = 0.08;
+    private static final int MIN_SHORTLIST_SIZE = 40;
 
     private final JobRepository jobRepository;
     private final ResumeRepository resumeRepository;
@@ -52,7 +53,7 @@ public class MatchingServiceImpl implements MatchingService {
         Set<String> resumeSkills = TextProfileUtils.parseSkills(resume.getSkillsJson());
         Set<String> resumeTokens = TextProfileUtils.tokenize(resumeText);
 
-        List<Job> jobs = jobRepository.findAll();
+        List<Job> jobs = shortlistCandidates(jobRepository.findAll(), resumeSkills, resumeTokens);
         List<Job> matched = new ArrayList<>();
         Set<String> missingSkills = new HashSet<>();
 
@@ -69,7 +70,7 @@ public class MatchingServiceImpl implements MatchingService {
 
             System.out.println("Similarity score: " + score);
 
-            if (score > MATCH_THRESHOLD) {
+            if (score > MATCH_THRESHOLD && passesRelevanceGate(resumeText, resumeSkills, resumeTokens, job, jobText)) {
                 job.setMatchScore(score);
                 matched.add(job);
 
@@ -201,8 +202,56 @@ public class MatchingServiceImpl implements MatchingService {
                 + exactBoost;
     }
 
-    private boolean hasStrongPhraseOverlap(Resume resume, Job job) {
-        String resumeText = safeLower(resume.getResumeText());
+    private boolean passesRelevanceGate(
+            String resumeText,
+            Set<String> resumeSkills,
+            Set<String> resumeTokens,
+            Job job,
+            String jobText
+    ) {
+        Set<String> jobSkills = TextProfileUtils.parseSkills(job.getSkills());
+        Set<String> jobTokens = TextProfileUtils.tokenize(jobText);
+        Set<String> titleTokens = TextProfileUtils.tokenize(job.getTitle());
+
+        double skillScore = TextProfileUtils.overlapScore(resumeSkills, jobSkills);
+        double keywordScore = TextProfileUtils.overlapScore(resumeTokens, jobTokens);
+        double titleScore = TextProfileUtils.overlapScore(resumeTokens, titleTokens);
+
+        return skillScore >= 0.15
+                || keywordScore >= 0.10
+                || titleScore >= 0.15
+                || hasStrongPhraseOverlap(resumeText, job);
+    }
+
+    private List<Job> shortlistCandidates(List<Job> allJobs, Set<String> resumeSkills, Set<String> resumeTokens) {
+        if (allJobs.isEmpty()) {
+            return allJobs;
+        }
+
+        List<Job> shortlisted = new ArrayList<>();
+        for (Job job : allJobs) {
+            String jobText = buildJobText(job);
+            if (jobText.isBlank()) {
+                continue;
+            }
+
+            Set<String> jobSkills = TextProfileUtils.parseSkills(job.getSkills());
+            Set<String> jobTokens = TextProfileUtils.tokenize(jobText);
+            Set<String> titleTokens = TextProfileUtils.tokenize(job.getTitle());
+
+            double skillScore = TextProfileUtils.overlapScore(resumeSkills, jobSkills);
+            double keywordScore = TextProfileUtils.overlapScore(resumeTokens, jobTokens);
+            double titleScore = TextProfileUtils.overlapScore(resumeTokens, titleTokens);
+
+            if (skillScore >= 0.05 || keywordScore >= 0.05 || titleScore >= 0.08) {
+                shortlisted.add(job);
+            }
+        }
+
+        return shortlisted.size() >= MIN_SHORTLIST_SIZE ? shortlisted : allJobs;
+    }
+
+    private boolean hasStrongPhraseOverlap(String resumeText, Job job) {
         String title = safeLower(job.getTitle());
         if (resumeText.isBlank() || title.isBlank()) {
             return false;

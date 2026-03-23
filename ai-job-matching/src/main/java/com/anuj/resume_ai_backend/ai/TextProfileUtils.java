@@ -1,8 +1,12 @@
 package com.anuj.resume_ai_backend.ai;
 
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -94,5 +98,92 @@ public final class TextProfileUtils {
         }
 
         return (2.0 * overlap) / (left.size() + right.size());
+    }
+
+    public static List<String> topKeywords(String text, int limit) {
+        if (limit <= 0) {
+            return Collections.emptyList();
+        }
+
+        String normalized = normalizeText(text);
+        if (normalized.isBlank()) {
+            return Collections.emptyList();
+        }
+
+        Map<String, Integer> counts = new HashMap<>();
+        for (String token : normalized.split(" ")) {
+            if (token.isBlank() || STOP_WORDS.contains(token)) {
+                continue;
+            }
+            if (token.length() <= 2 && !SHORT_TOKEN_ALLOWLIST.contains(token)) {
+                continue;
+            }
+            counts.merge(token, 1, Integer::sum);
+        }
+
+        return counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder())
+                        .thenComparing(Map.Entry.comparingByKey()))
+                .limit(limit)
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+    public static List<String> buildSearchQueries(String resumeText, String skillsCsv) {
+        LinkedHashSet<String> queries = new LinkedHashSet<>();
+
+        for (String skill : parseSkills(skillsCsv)) {
+            queries.add(skill);
+            queries.add(skill + " jobs");
+        }
+
+        List<String> keywords = topKeywords(resumeText, 8);
+        for (String keyword : keywords) {
+            if (keyword.length() >= 4) {
+                queries.add(keyword);
+            }
+        }
+
+        addRoleQueries(resumeText, queries);
+
+        return queries.stream()
+                .filter(query -> !query.isBlank())
+                .limit(10)
+                .toList();
+    }
+
+    private static void addRoleQueries(String resumeText, Set<String> queries) {
+        String text = normalizeText(resumeText);
+        if (text.isBlank()) {
+            return;
+        }
+
+        Map<String, List<String>> rolePatterns = Map.of(
+                "software", List.of("software engineer", "developer", "full stack developer"),
+                "java", List.of("java developer", "backend developer"),
+                "python", List.of("python developer", "data analyst"),
+                "data", List.of("data analyst", "data engineer", "data scientist"),
+                "support", List.of("customer support", "customer success", "technical support"),
+                "sales", List.of("sales executive", "business development"),
+                "marketing", List.of("digital marketing", "seo specialist", "content writer"),
+                "finance", List.of("accountant", "financial analyst", "bookkeeping"),
+                "accounting", List.of("accountant", "bookkeeping"),
+                "hr", List.of("hr executive", "recruiter", "talent acquisition"),
+                "recruitment", List.of("recruiter", "talent acquisition"),
+                "design", List.of("graphic designer", "ui ux designer"),
+                "healthcare", List.of("healthcare assistant", "nurse", "pharmacist"),
+                "teaching", List.of("teacher", "education counselor"),
+                "education", List.of("teacher", "education counselor"),
+                "qa", List.of("qa engineer", "automation tester"),
+                "testing", List.of("qa engineer", "automation tester"),
+                "project", List.of("project manager", "business analyst"),
+                "product", List.of("product manager", "business analyst")
+        );
+
+        for (Map.Entry<String, List<String>> entry : rolePatterns.entrySet()) {
+            if (text.contains(entry.getKey())) {
+                queries.addAll(entry.getValue());
+            }
+        }
     }
 }

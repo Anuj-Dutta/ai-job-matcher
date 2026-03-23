@@ -2,6 +2,7 @@ package com.anuj.resume_ai_backend.service;
 
 import com.anuj.resume_ai_backend.ai.EmbeddingService;
 import com.anuj.resume_ai_backend.ai.SkillExtractor;
+import com.anuj.resume_ai_backend.ai.TextProfileUtils;
 import com.anuj.resume_ai_backend.entity.Job;
 import com.anuj.resume_ai_backend.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,12 +12,15 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class AdzunaService {
 
     private static final int MAX_IMPORT = 400;
     private static final int MAX_DB_SIZE = 12000;
+    private static final long IMPORT_WAIT_TIMEOUT_MS = 90000;
+    private static final long MIN_JOBS_FOR_MATCHING = 250;
     private static final int RESULTS_PER_PAGE = 25;
     private static final List<String> SEARCH_QUERIES = List.of(
             "software engineer", "java developer", "python developer", "frontend developer", "backend developer",
@@ -36,6 +40,8 @@ public class AdzunaService {
     private final String adzunaAppId;
     private final String adzunaAppKey;
     private final String adzunaCountry;
+    private final Object importMonitor = new Object();
+    private volatile boolean importInProgress = false;
 
     public AdzunaService(
             JobRepository jobRepository,
@@ -53,6 +59,76 @@ public class AdzunaService {
     }
 
     public String importJobs() {
+        return runManagedImport();
+    }
+
+    public void ensureJobsReadyForMatching() {
+        if (jobRepository.count() >= MIN_JOBS_FOR_MATCHING) {
+            awaitCurrentImportCompletion(IMPORT_WAIT_TIMEOUT_MS);
+            return;
+        }
+
+        boolean shouldRunImport = false;
+        synchronized (importMonitor) {
+            if (importInProgress) {
+                awaitCurrentImportCompletion(IMPORT_WAIT_TIMEOUT_MS);
+                return;
+            }
+            importInProgress = true;
+            shouldRunImport = true;
+        }
+
+        if (!shouldRunImport) {
+            return;
+        }
+
+        try {
+            doImportJobs();
+        } finally {
+            markImportFinished();
+        }
+    }
+
+    public void ensureJobsReadyForResume(String resumeText, String skillsCsv) {
+        ensureJobsReadyForMatching();
+
+        List<String> queries = TextProfileUtils.buildSearchQueries(resumeText, skillsCsv);
+        if (queries.isEmpty()) {
+            return;
+        }
+
+        synchronized (importMonitor) {
+            if (importInProgress) {
+                awaitCurrentImportCompletion(IMPORT_WAIT_TIMEOUT_MS);
+                return;
+            }
+            importInProgress = true;
+        }
+
+        try {
+            importJobsForQueries(queries, 80, 1);
+        } finally {
+            markImportFinished();
+        }
+    }
+
+    private String runManagedImport() {
+        synchronized (importMonitor) {
+            if (importInProgress) {
+                awaitCurrentImportCompletion(IMPORT_WAIT_TIMEOUT_MS);
+                return "Import already in progress or recently completed";
+            }
+            importInProgress = true;
+        }
+
+        try {
+            return doImportJobs();
+        } finally {
+            markImportFinished();
+        }
+    }
+
+    private String doImportJobs() {
         if (adzunaAppId.isEmpty() || adzunaAppKey.isEmpty()) {
             String message = "Adzuna credentials are not configured. Skipping import.";
             System.out.println(message);
@@ -66,10 +142,19 @@ public class AdzunaService {
             return "Import skipped";
         }
 
-        for (String query : SEARCH_QUERIES) {
-            for (int page = 1; page <= 2; page++) {
-                if (imported >= MAX_IMPORT) {
-                    return "Imported " + imported + " jobs";
+        imported = importJobsForQueries(SEARCH_QUERIES, MAX_IMPORT, 2);
+
+        System.out.println("Imported jobs: " + imported);
+        return "Imported " + imported + " jobs";
+    }
+
+    private int importJobsForQueries(List<String> queries, int maxImport, int maxPages) {
+        AtomicInteger imported = new AtomicInteger();
+
+        for (String query : queries) {
+            for (int page = 1; page <= maxPages; page++) {
+                if (imported.get() >= maxImport) {
+                    return imported.get();
                 }
 
                 String url = UriComponentsBuilder
@@ -93,50 +178,81 @@ public class AdzunaService {
                     continue;
                 }
 
-                if (response == null) {
-                    continue;
-                }
-
-                Object resultsObj = response.get("results");
-                if (!(resultsObj instanceof List<?> rawResults) || rawResults.isEmpty()) {
-                    continue;
-                }
-
-                for (Object item : rawResults) {
-                    if (!(item instanceof Map<?, ?> rawJobData)) {
-                        continue;
-                    }
-
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> jobData = (Map<String, Object>) rawJobData;
-
-                    if (imported >= MAX_IMPORT) {
-                        return "Imported " + imported + " jobs";
-                    }
-
-                    String externalId = String.valueOf(jobData.get("adref"));
-                    if (externalId.isBlank() || jobRepository.existsByExternalId(externalId)) {
-                        continue;
-                    }
-
-                    Job job = new Job();
-                    job.setExternalId(externalId);
-                    job.setTitle(asString(jobData.get("title")));
-                    job.setDescription(asString(jobData.get("description")));
-                    job.setApplyLink(asString(jobData.get("redirect_url")));
-                    job.setCompany(extractNestedDisplayName(jobData.get("company")));
-                    job.setLocation(extractNestedDisplayName(jobData.get("location")));
-                    job.setSkills(SkillExtractor.extractSkillsAsCsv(buildJobText(job)));
-                    job.setEmbedding(embeddingService.generateEmbedding(buildJobText(job)));
-
-                    jobRepository.save(job);
-                    imported++;
-                }
+                imported.addAndGet(saveJobsFromResponse(response, maxImport - imported.get()));
             }
         }
 
-        System.out.println("Imported jobs: " + imported);
-        return "Imported " + imported + " jobs";
+        return imported.get();
+    }
+
+    private int saveJobsFromResponse(Map response, int remainingCapacity) {
+        if (response == null || remainingCapacity <= 0) {
+            return 0;
+        }
+
+        Object resultsObj = response.get("results");
+        if (!(resultsObj instanceof List<?> rawResults) || rawResults.isEmpty()) {
+            return 0;
+        }
+
+        int imported = 0;
+        for (Object item : rawResults) {
+            if (imported >= remainingCapacity) {
+                break;
+            }
+            if (!(item instanceof Map<?, ?> rawJobData)) {
+                continue;
+            }
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> jobData = (Map<String, Object>) rawJobData;
+
+            String externalId = String.valueOf(jobData.get("adref"));
+            if (externalId.isBlank() || jobRepository.existsByExternalId(externalId)) {
+                continue;
+            }
+
+            Job job = new Job();
+            job.setExternalId(externalId);
+            job.setTitle(asString(jobData.get("title")));
+            job.setDescription(asString(jobData.get("description")));
+            job.setApplyLink(asString(jobData.get("redirect_url")));
+            job.setCompany(extractNestedDisplayName(jobData.get("company")));
+            job.setLocation(extractNestedDisplayName(jobData.get("location")));
+            job.setSkills(SkillExtractor.extractSkillsAsCsv(buildJobText(job)));
+            job.setEmbedding(embeddingService.generateEmbedding(buildJobText(job)));
+
+            jobRepository.save(job);
+            imported++;
+        }
+
+        return imported;
+    }
+
+    private void awaitCurrentImportCompletion(long timeoutMs) {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        synchronized (importMonitor) {
+            while (importInProgress) {
+                long remaining = deadline - System.currentTimeMillis();
+                if (remaining <= 0) {
+                    break;
+                }
+
+                try {
+                    importMonitor.wait(remaining);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+    }
+
+    private void markImportFinished() {
+        synchronized (importMonitor) {
+            importInProgress = false;
+            importMonitor.notifyAll();
+        }
     }
 
     private String buildJobText(Job job) {

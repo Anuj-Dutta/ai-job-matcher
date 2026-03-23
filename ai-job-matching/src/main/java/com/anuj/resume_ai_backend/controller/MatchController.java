@@ -3,6 +3,7 @@ package com.anuj.resume_ai_backend.controller;
 import com.anuj.resume_ai_backend.entity.Job;
 import com.anuj.resume_ai_backend.entity.Resume;
 import com.anuj.resume_ai_backend.repository.ResumeRepository;
+import com.anuj.resume_ai_backend.service.AdzunaService;
 import com.anuj.resume_ai_backend.service.EmailDeliveryResult;
 import com.anuj.resume_ai_backend.service.EmailService;
 import com.anuj.resume_ai_backend.service.MatchingService;
@@ -23,20 +24,24 @@ public class MatchController {
     private final ResumeRepository resumeRepository;
     private final MatchingService matchingService;
     private final EmailService emailService;
+    private final AdzunaService adzunaService;
 
     public MatchController(
             ResumeRepository resumeRepository,
             MatchingService matchingService,
-            EmailService emailService
+            EmailService emailService,
+            AdzunaService adzunaService
     ) {
         this.resumeRepository = resumeRepository;
         this.matchingService = matchingService;
         this.emailService = emailService;
+        this.adzunaService = adzunaService;
     }
 
     @GetMapping("/{resumeId}")
     public ResponseEntity<List<Job>> matchJobs(@PathVariable Long resumeId) {
         Resume resume = resumeRepository.findById(resumeId).orElseThrow();
+        adzunaService.ensureJobsReadyForResume(resume.getResumeText(), resume.getSkillsJson());
         List<Job> jobs = matchingService.matchJobs(resume);
 
         StringBuilder body = new StringBuilder("Top matched jobs:\n\n");
