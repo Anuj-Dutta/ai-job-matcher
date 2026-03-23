@@ -1,20 +1,19 @@
 package com.anuj.resume_ai_backend.ai;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 @Service
 public class EmbeddingService {
@@ -22,6 +21,7 @@ public class EmbeddingService {
     static final int FALLBACK_DIMENSIONS = 384;
     private static final int MAX_INPUT_LENGTH = 1000;
 
+    private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
     private final String hfApi;
     private final String hfToken;
@@ -35,6 +35,7 @@ public class EmbeddingService {
     }
 
     EmbeddingService(RestTemplate restTemplate, String hfApi, String hfToken) {
+        this.objectMapper = new ObjectMapper();
         this.restTemplate = restTemplate;
         this.hfApi = hfApi;
         this.hfToken = hfToken == null ? "" : hfToken.trim();
@@ -69,35 +70,68 @@ public class EmbeddingService {
     }
 
     private String generateRemoteEmbedding(String text) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(hfToken);
-
-        Map<String, String> body = new HashMap<>();
-        body.put("inputs", text);
-
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headers);
-        ResponseEntity<List> response = restTemplate.exchange(hfApi, HttpMethod.POST, request, List.class);
-
-        List<Double> embedding = parseEmbeddingResponse(response.getBody());
-        if (embedding == null || embedding.isEmpty()) {
-            return null;
+        String payload;
+        try {
+            payload = objectMapper.writeValueAsString(java.util.Map.of("inputs", text));
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to serialize embedding request.", e);
         }
 
-        return toCsv(embedding);
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) URI.create(hfApi).toURL().openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Authorization", "Bearer " + hfToken);
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setDoOutput(true);
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(30000);
+
+            try (OutputStream outputStream = connection.getOutputStream()) {
+                outputStream.write(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+
+            int status = connection.getResponseCode();
+            InputStream responseStream = status >= 200 && status < 300
+                    ? connection.getInputStream()
+                    : connection.getErrorStream();
+
+            String responseBody = responseStream == null
+                    ? ""
+                    : new String(responseStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+
+            if (status < 200 || status >= 300) {
+                throw new IllegalStateException("Embedding API returned HTTP " + status + ": " + responseBody);
+            }
+
+            Object parsedResponse = objectMapper.readValue(responseBody, Object.class);
+            List<Double> embedding = parseEmbeddingResponse(parsedResponse);
+            if (embedding == null || embedding.isEmpty()) {
+                return null;
+            }
+
+            return toCsv(embedding);
+        } catch (IOException e) {
+            throw new IllegalStateException("Embedding API request failed.", e);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
     }
 
-    private List<Double> parseEmbeddingResponse(List<?> responseBody) {
-        if (responseBody == null || responseBody.isEmpty()) {
+    private List<Double> parseEmbeddingResponse(Object responseBody) {
+        if (!(responseBody instanceof List<?> responseList) || responseList.isEmpty()) {
             System.out.println("Embedding response empty.");
             return null;
         }
 
-        Object firstItem = responseBody.get(0);
+        Object firstItem = responseList.get(0);
 
         if (firstItem instanceof Number) {
-            List<Double> embedding = new ArrayList<>(responseBody.size());
-            for (Object item : responseBody) {
+            List<Double> embedding = new ArrayList<>(responseList.size());
+            for (Object item : responseList) {
                 if (!(item instanceof Number number)) {
                     return null;
                 }
@@ -107,7 +141,7 @@ public class EmbeddingService {
         }
 
         if (firstItem instanceof List<?>) {
-            return meanPool(responseBody);
+            return meanPool(responseList);
         }
 
         System.out.println("Unexpected embedding format: " + firstItem.getClass().getName());
