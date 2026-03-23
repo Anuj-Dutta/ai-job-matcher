@@ -34,7 +34,7 @@ public class ResumeServiceImpl implements ResumeService {
         Resume resume = new Resume();
         resume.setEmail(email.trim());
         resume.setResumeText(text);
-        resume.setSkillsJson(SkillExtractor.extractSkills(text).toString());
+        resume.setSkillsJson(SkillExtractor.extractSkillsAsCsv(text));
         resume.setEmbedding(embeddingService.generateEmbedding(text));
 
         System.out.println("Embedding generated for resume: " + (resume.getEmbedding() != null));

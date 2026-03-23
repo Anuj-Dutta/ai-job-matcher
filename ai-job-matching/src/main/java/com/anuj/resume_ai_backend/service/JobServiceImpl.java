@@ -1,6 +1,7 @@
 package com.anuj.resume_ai_backend.service;
 
 import com.anuj.resume_ai_backend.ai.EmbeddingService;
+import com.anuj.resume_ai_backend.ai.SkillExtractor;
 import com.anuj.resume_ai_backend.entity.Job;
 import com.anuj.resume_ai_backend.repository.JobRepository;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public Job saveJob(Job job) {
+        hydrateDerivedFields(job);
         job.setEmbedding(embeddingService.generateEmbedding(buildJobText(job)));
         return jobRepository.save(job);
     }
@@ -38,6 +40,7 @@ public class JobServiceImpl implements JobService {
                 continue;
             }
 
+            hydrateDerivedFields(job);
             String embedding = embeddingService.generateEmbedding(buildJobText(job));
             if (embedding == null || embedding.isBlank()) {
                 continue;
@@ -51,9 +54,21 @@ public class JobServiceImpl implements JobService {
         return updated;
     }
 
+    private void hydrateDerivedFields(Job job) {
+        if (job == null) {
+            return;
+        }
+
+        if (job.getSkills() == null || job.getSkills().isBlank()) {
+            job.setSkills(SkillExtractor.extractSkillsAsCsv(buildJobText(job)));
+        }
+    }
+
     private String buildJobText(Job job) {
         StringBuilder builder = new StringBuilder();
         appendIfPresent(builder, job.getTitle());
+        appendIfPresent(builder, job.getCompany());
+        appendIfPresent(builder, job.getLocation());
         appendIfPresent(builder, job.getDescription());
         appendIfPresent(builder, job.getSkills());
         return builder.toString().trim();

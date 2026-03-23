@@ -1,6 +1,7 @@
 package com.anuj.resume_ai_backend.service;
 
 import com.anuj.resume_ai_backend.ai.EmbeddingService;
+import com.anuj.resume_ai_backend.ai.SkillExtractor;
 import com.anuj.resume_ai_backend.entity.Job;
 import com.anuj.resume_ai_backend.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,8 +15,20 @@ import java.util.Map;
 @Service
 public class AdzunaService {
 
-    private static final int MAX_IMPORT = 150;
-    private static final int MAX_DB_SIZE = 3000;
+    private static final int MAX_IMPORT = 400;
+    private static final int MAX_DB_SIZE = 12000;
+    private static final int RESULTS_PER_PAGE = 25;
+    private static final List<String> SEARCH_QUERIES = List.of(
+            "software engineer", "java developer", "python developer", "frontend developer", "backend developer",
+            "full stack developer", "mobile app developer", "devops engineer", "cloud engineer", "site reliability engineer",
+            "data analyst", "data engineer", "data scientist", "business analyst", "product manager",
+            "project manager", "scrum master", "qa engineer", "automation tester", "cyber security analyst",
+            "network engineer", "system administrator", "technical support", "customer support", "customer success",
+            "sales executive", "business development", "digital marketing", "seo specialist", "content writer",
+            "graphic designer", "ui ux designer", "operations executive", "supply chain analyst", "procurement specialist",
+            "accountant", "financial analyst", "hr executive", "recruiter", "talent acquisition",
+            "teacher", "education counselor", "healthcare assistant", "nurse", "pharmacist"
+    );
 
     private final JobRepository jobRepository;
     private final EmbeddingService embeddingService;
@@ -53,19 +66,8 @@ public class AdzunaService {
             return "Import skipped";
         }
 
-        String[] queries = {
-                "developer",
-                "software engineer",
-                "java developer",
-                "python developer",
-                "backend engineer",
-                "data engineer",
-                "cloud engineer",
-                "programmer"
-        };
-
-        for (String query : queries) {
-            for (int page = 1; page <= 3; page++) {
+        for (String query : SEARCH_QUERIES) {
+            for (int page = 1; page <= 2; page++) {
                 if (imported >= MAX_IMPORT) {
                     return "Imported " + imported + " jobs";
                 }
@@ -75,7 +77,8 @@ public class AdzunaService {
                         .queryParam("app_id", adzunaAppId)
                         .queryParam("app_key", adzunaAppKey)
                         .queryParam("what", query)
-                        .queryParam("results_per_page", 50)
+                        .queryParam("results_per_page", RESULTS_PER_PAGE)
+                        .queryParam("content-type", "application/json")
                         .buildAndExpand(adzunaCountry, page)
                         .toUriString();
 
@@ -123,6 +126,7 @@ public class AdzunaService {
                     job.setApplyLink(asString(jobData.get("redirect_url")));
                     job.setCompany(extractNestedDisplayName(jobData.get("company")));
                     job.setLocation(extractNestedDisplayName(jobData.get("location")));
+                    job.setSkills(SkillExtractor.extractSkillsAsCsv(buildJobText(job)));
                     job.setEmbedding(embeddingService.generateEmbedding(buildJobText(job)));
 
                     jobRepository.save(job);
@@ -138,6 +142,8 @@ public class AdzunaService {
     private String buildJobText(Job job) {
         StringBuilder builder = new StringBuilder();
         appendIfPresent(builder, job.getTitle());
+        appendIfPresent(builder, job.getCompany());
+        appendIfPresent(builder, job.getLocation());
         appendIfPresent(builder, job.getDescription());
         appendIfPresent(builder, job.getSkills());
         return builder.toString().trim();
